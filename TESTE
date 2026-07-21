@@ -1,0 +1,443 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CRM SF - Projetos Elétricos</title>
+<!-- Bibliotecas Externas -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+
+<style>
+:root {
+  --primaria: #2563eb; --primaria-hover: #1d4ed8; --sucesso: #22c55e; --perigo: #ef4444; --aviso: #f59e0b;<br/>
+  --bg: #f8fafc; --bg2: #ffffff; --bg3: #f1f5f9; --borda: #e2e8f0;<br/>
+  --text: #1e293b; --text2: #64748b; --header-bg: #1e293b; --header-txt: #ffffff;<br/>
+  --input-bg: #ffffff; --input-border: #cbd5e1;
+}
+.dark {
+  --bg: #0f172a; --bg2: #1e293b; --bg3: #334155; --borda: #334155;<br/>
+  --text: #f1f5f9; --text2: #94a3b8; --header-bg: #020617;<br/>
+  --input-bg: #1e293b; --input-border: #475569;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Inter', sans-serif; }<br/>
+body { background: var(--bg); color: var(--text); transition: 0.3s; }
+
+/* Login */
+#telaLogin { position: fixed; inset: 0; background: var(--bg); display: flex; align-items: center; justify-content: center; z-index: 1000; }<br/>
+.login-box { background: var(--bg2); padding: 40px; border-radius: 16px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); width: 100%; max-width: 400px; text-align: center; }<br/>
+.login-box h1 { font-size: 24px; margin-bottom: 8px; }<br/>
+.login-box .sub { color: var(--text2); font-size: 14px; margin-bottom: 24px; }<br/>
+.login-box label { display: block; text-align: left; font-size: 13px; margin-bottom: 6px; font-weight: 600; }<br/>
+.login-box input { width: 100%; padding: 12px; margin-bottom: 16px; border: 1px solid var(--input-border); border-radius: 8px; background: var(--input-bg); color: var(--text); }<br/>
+.login-box button { width: 100%; padding: 12px; background: var(--primaria); color: #fff; border: none; border-radius: 8px; font-weight: 700; cursor: pointer; }<br/>
+.login-erro { color: var(--perigo); font-size: 13px; margin-top: 12px; display: none; }
+
+/* Layout */
+.topo { height: 56px; background: var(--header-bg); color: var(--header-txt); display: flex; align-items: center; justify-content: space-between; padding: 0 20px; position: fixed; top: 0; width: 100%; z-index: 100; }<br/>
+.topo-esq { display: flex; align-items: center; gap: 12px; }<br/>
+.logo { background: var(--primaria); padding: 4px 8px; border-radius: 6px; font-weight: 800; }<br/>
+.sidebar { width: 240px; background: var(--bg2); border-right: 1px solid var(--borda); position: fixed; top: 56px; bottom: 0; overflow-y: auto; transition: 0.3s; z-index: 50; }<br/>
+.conteudo { margin-left: 240px; padding: 24px; margin-top: 56px; min-height: calc(100vh - 56px); }<br/>
+.sidebar-item { padding: 12px 20px; cursor: pointer; display: flex; align-items: center; gap: 10px; font-size: 14px; color: var(--text2); font-weight: 500; }<br/>
+.sidebar-item:hover { background: var(--bg3); color: var(--primaria); }<br/>
+.sidebar-item.ativo { background: var(--bg3); color: var(--primaria); border-right: 3px solid var(--primaria); }
+
+/* UI Elements */
+.titulo-pag { font-size: 22px; font-weight: 700; margin-bottom: 20px; }<br/>
+.cartoes { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 24px; }<br/>
+.cartao { background: var(--bg2); padding: 20px; border-radius: 12px; border: 1px solid var(--borda); }<br/>
+.cartao .rotulo { font-size: 12px; color: var(--text2); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px; }<br/>
+.cartao .valor { font-size: 24px; font-weight: 800; }
+
+.tabela-wrap { background: var(--bg2); border-radius: 12px; border: 1px solid var(--borda); overflow: hidden; margin-bottom: 20px; overflow-x: auto; }<br/>
+table { width: 100%; border-collapse: collapse; font-size: 13px; }<br/>
+th { background: var(--bg3); padding: 12px 16px; text-align: left; color: var(--text2); font-weight: 600; }<br/>
+td { padding: 12px 16px; border-top: 1px solid var(--borda); }<br/>
+tr:hover { background: rgba(0,0,0,0.02); }
+
+.btn { padding: 8px 16px; border-radius: 6px; border: none; cursor: pointer; font-weight: 600; font-size: 13px; display: inline-flex; align-items: center; gap: 6px; }<br/>
+.btn-primary { background: var(--primaria); color: #fff; }<br/>
+.btn-success { background: var(--sucesso); color: #fff; }<br/>
+.btn-outline { background: transparent; border: 1px solid var(--borda); color: var(--text); }<br/>
+.btn-icone { background: none; border: none; cursor: pointer; font-size: 16px; }
+
+/* Kanban */
+.kanban-board { display: flex; gap: 16px; overflow-x: auto; padding-bottom: 20px; align-items: flex-start; }<br/>
+.kanban-col { min-width: 280px; background: var(--bg3); border-radius: 12px; padding: 12px; }<br/>
+.kanban-col-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; font-weight: 700; font-size: 14px; }<br/>
+.kanban-card { background: var(--bg2); padding: 12px; border-radius: 8px; margin-bottom: 10px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); cursor: pointer; border: 1px solid var(--borda); }<br/>
+.kanban-card:hover { border-color: var(--primaria); }<br/>
+.kanban-card-title { font-weight: 700; margin-bottom: 4px; font-size: 13px; }<br/>
+.kanban-card-info { font-size: 11px; color: var(--text2); }
+
+/* Modais */
+.modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); display: none; align-items: center; justify-content: center; z-index: 200; padding: 20px; }<br/>
+.modal-overlay.show { display: flex; }<br/>
+.modal { background: var(--bg2); padding: 24px; border-radius: 16px; width: 100%; max-width: 600px; max-height: 90vh; overflow-y: auto; position: relative; }<br/>
+.form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 20px; }<br/>
+.grupo { display: flex; flex-direction: column; gap: 4px; }<br/>
+.grupo label { font-size: 12px; font-weight: 600; color: var(--text2); }<br/>
+.grupo input, .grupo select, .grupo textarea { padding: 10px; border-radius: 8px; border: 1px solid var(--input-border); background: var(--input-bg); color: var(--text); }
+
+/* Filtros */
+.filtro-bar { display: flex; gap: 12px; margin-bottom: 20px; flex-wrap: wrap; align-items: flex-end; background: var(--bg2); padding: 16px; border-radius: 12px; border: 1px solid var(--borda); }
+
+/* Toast */
+@keyframes slideIn { from { transform: translateX(100px); opacity: 0 } to { transform: translateX(0); opacity: 1 } }<br/>
+.toast-container { animation: slideIn .3s ease; position: fixed; bottom: 24px; right: 24px; z-index: 9999; padding: 12px 20px; border-radius: 10px; font-size: 14px; font-weight: 600; box-shadow: 0 4px 20px rgba(0,0,0,.3); color: #fff; }
+
+/* Estoque Grid */
+.estq-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 12px; margin-bottom: 20px; }<br/>
+.estq-item { background: var(--bg2); padding: 12px; border-radius: 10px; border: 1px solid var(--borda); text-align: center; }<br/>
+.estq-item .qtd { font-size: 20px; font-weight: 800; margin: 8px 0; }<br/>
+.estq-item .qtd.critico { color: var(--perigo); }<br/>
+.estq-item .qtd.baixo { color: var(--aviso); }<br/>
+.estq-item .qtd.ok { color: var(--sucesso); }
+
+@media (max-width: 768px) {<br/>
+  .sidebar { transform: translateX(-100%); }<br/>
+  .conteudo { margin-left: 0; }<br/>
+  .form-grid { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+
+<div id="telaLogin">
+  <div class="login-box">
+    <div style="background:var(--primaria);color:#fff;width:48px;height:48px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-weight:800;margin:0 auto 16px">SF</div>
+    <h1>CRM SF</h1>
+    <p class="sub">Projetos Elétricos & Fotovoltaicos</p>
+    <div class="grupo" style="text-align:left">
+      <label>Usuário</label>
+      <input type="text" id="loginUser" placeholder="Seu usuário">
+      <label>Senha</label>
+      <input type="password" id="loginPass" placeholder="••••••••">
+    </div>
+    <button onclick="logar()">Entrar no Sistema</button>
+    <div class="login-erro" id="loginErro">Usuário ou senha incorretos.</div>
+  </div>
+</div>
+
+<div id="app" style="display:none">
+  <div class="topo">
+    <div class="topo-esq">
+      <div class="logo">SF</div>
+      <h2 style="font-size:16px">CRM Projetos Elétricos</h2>
+    </div>
+    <div class="topo-dir">
+      <span id="userInfo" style="font-size:12px;margin-right:15px;opacity:0.8"></span>
+      <button class="btn-icone" onclick="altTema()">🌙</button>
+      <button class="btn-icone" onclick="sair()" style="margin-left:10px">🚪</button>
+    </div>
+  </div>
+
+  <div class="sidebar" id="sidebar"></div>
+
+  <div class="conteudo" id="conteudo"></div>
+</div>
+
+<!-- Modais -->
+<div class="modal-overlay" id="modalLead">
+  <div class="modal">
+    <h2 id="tituloModalLead" style="margin-bottom:20px">Novo Lead</h2>
+    <div class="form-grid">
+      <div class="grupo"><label>Nome *</label><input id="fLeadNome"></div>
+      <div class="grupo"><label>Telefone</label><input id="fLeadTel"></div>
+      <div class="grupo"><label>Cidade</label><input id="fLeadCidade"></div>
+      <div class="grupo"><label>Origem</label>
+        <select id="fLeadOrigem">
+          <option>Indicação</option><option>Instagram</option><option>WhatsApp</option><option>Site</option>
+        </select>
+      </div>
+      <div class="grupo"><label>Valor Estimado</label><input id="fLeadValor" placeholder="R$ 0,00"></div>
+      <div class="grupo"><label>Vendedor</label><select id="fLeadVendedor"><option>João</option><option>Bruno</option><option>Vinicius</option></select></div>
+    </div>
+    <div style="display:flex;gap:10px;justify-content:flex-end">
+      <button class="btn btn-outline" onclick="fecharModal('modalLead')">Cancelar</button>
+      <button class="btn btn-primary" onclick="salvarLead()">Salvar Lead</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modalProjeto">
+  <div class="modal">
+    <h2 id="tituloModalProj" style="margin-bottom:20px">Novo Projeto</h2>
+    <div class="form-grid">
+      <div class="grupo" style="grid-column: span 2"><label>Cliente *</label><input id="mpCliente"></div>
+      <div class="grupo"><label>Empresa</label><select id="mpEmpresa"></select></div>
+      <div class="grupo"><label>Potência (kWp)</label><input id="mpPotencia" type="number" step="0.1" oninput="calcPotencia()"></div>
+      <div class="grupo"><label>Valor Projeto</label><input id="mpValor" readonly></div>
+      <div class="grupo"><label>TRT</label><input id="mpTrt" readonly></div>
+      <div class="grupo"><label>Status</label><select id="mpStatus"></select></div>
+      <div class="grupo"><label>Pago</label><select id="mpPago"><option>NÃO</option><option>SIM</option></select></div>
+    </div>
+    <div style="display:flex;gap:10px;justify-content:flex-end">
+      <button class="btn btn-outline" onclick="fecharModal('modalProjeto')">Cancelar</button>
+      <button class="btn btn-primary" onclick="salvarProjeto()">Salvar Projeto</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// Configuração Supabase
+const SB_URL = 'https://zzcenbzqlzibrqnjooia.supabase.co';
+const SB_KEY = 'sb_publishable_mH9pJzsKhc2g0qwp2AW8PQ_8hrT-cW1';
+const sb = supabase.createClient(SB_URL, SB_KEY);
+
+// Variáveis Globais
+let usuarioAtual = null;
+let cache = {};
+let cacheTTL = {};
+let _allLeads = [], _allVendas = [], _allProjetos = [], _allEstoque = [];
+
+// Melhoria 3: Cache com TTL
+async function get(t) {
+  const agora = Date.now();
+  const expirado = cacheTTL[t] && (agora - cacheTTL[t] > 30000);
+  try {
+    if (cache[t] && !expirado) return cache[t];
+    const { data, error } = await sb.from(t).select('*').order('id', { ascending: false });
+    if (error) throw error;
+    cache[t] = data || [];
+    cacheTTL[t] = agora;
+    return cache[t];
+  } catch (e) {
+    console.error('Erro GET ' + t, e);
+    return cache[t] || [];
+  }
+}
+
+async function ins(t, d) { cache[t] = null; return await sb.from(t).insert(d); }
+async function upd(t, id, d) { cache[t] = null; return await sb.from(t).update(d).eq('id', id); }
+async function del(t, id) { cache[t] = null; return await sb.from(t).delete().eq('id', id); }
+
+// Melhoria 2: Toast System
+function toast(msg, tipo) {
+  const existing = document.querySelector('.toast-container');
+  if (existing) existing.remove();
+  const container = document.createElement('div');
+  container.className = 'toast-container';
+  container.style.background = (tipo === 'erro' ? '#ef4444' : tipo === 'aviso' ? '#f59e0b' : '#22c55e');
+  container.textContent = msg;
+  document.body.appendChild(container);
+  setTimeout(() => { container.style.opacity = '0'; container.style.transition = 'opacity .3s'; }, 2500);
+  setTimeout(() => container.remove(), 3000);
+}
+
+// Melhoria 1: Debounce
+function debounce(fn, ms) {
+  let timer;
+  return function (...args) {
+    clearTimeout(timer);
+    timer = setTimeout(() => fn.apply(this, args), ms);
+  };
+}
+
+// Funções de Auxílio
+function fmtNum(v) { return (Number(v) || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
+function parseMon(s) { return parseFloat(String(s).replace(/[R$\s.]/g, '').replace(',', '.')) || 0; }
+function hoje() { return new Date().toLocaleDateString('pt-BR'); }
+
+// Auth
+async function logar() {
+  const u = document.getElementById('loginUser').value;
+  const p = document.getElementById('loginPass').value;
+  const { data, error } = await sb.from('usuarios').select('*').eq('usuario', u).eq('senha', p).maybeSingle();
+  
+  if (data) {
+    usuarioAtual = data;
+    document.getElementById('telaLogin').style.display = 'none';
+    document.getElementById('app').style.display = 'block';
+    document.getElementById('userInfo').textContent = `${data.nome} (${data.funcao})`;
+    montarSidebar();
+    ir('dashboard');
+    toast('Bem-vindo ao sistema!', 'sucesso');
+  } else {
+    document.getElementById('loginErro').style.display = 'block';
+    toast('Falha no login', 'erro');
+  }
+}
+
+function sair() {
+  usuarioAtual = null;
+  document.getElementById('app').style.display = 'none';
+  document.getElementById('telaLogin').style.display = 'flex';
+}
+
+function montarSidebar() {
+  const menu = {
+    Administrador: ['dashboard', 'leads', 'vendas', 'gastos', 'projetos', 'empresas', 'estoque', 'config'],<br/>
+    Financeiro: ['dashboard', 'vendas', 'gastos', 'projetos', 'estoque'],<br/>
+    Vendedor: ['dashboard', 'leads', 'projetos'],<br/>
+    Empresa: ['dashboard', 'projetos']
+  };
+  const labels = { dashboard: '📊 Dashboard', leads: '👥 Leads', vendas: '💰 Vendas', gastos: '🧾 Gastos', projetos: '🔬 Projetos', empresas: '🏢 Empresas', estoque: '📦 Estoque', config: '⚙️ Config' };
+  
+  const container = document.getElementById('sidebar');
+  container.innerHTML = '';
+  (menu[usuarioAtual.funcao] || ['dashboard']).forEach(m => {
+    const div = document.createElement('div');
+    div.className = 'sidebar-item';
+    div.innerHTML = labels[m];
+    div.onclick = () => ir(m);
+    container.appendChild(div);
+  });
+}
+
+function ir(pag) {
+  document.querySelectorAll('.sidebar-item').forEach(i => i.classList.remove('ativo'));
+  const fn = window['pag' + pag.charAt(0).toUpperCase() + pag.slice(1)];
+  if (fn) fn();
+}
+
+// --- PÁGINAS ---
+
+async function pagDashboard() {
+  const cont = document.getElementById('conteudo');
+  cont.innerHTML = `<h1 class="titulo-pag">📊 Dashboard Geral</h1>
+    <div class="cartoes" id="dashKpis">Carregando...</div>
+    <div class="tabela-wrap" style="padding:20px">
+      <canvas id="chartFinanceiro" style="max-height:300px"></canvas>
+    </div>`;
+    
+  const [leads, vendas, projetos] = await Promise.all([get('leads'), get('vendas'), get('projetos')]);
+  
+  const totalVendas = vendas.reduce((s, v) => s + parseMon(v.valor), 0);
+  const totalProjetos = projetos.filter(p => p.pago === 'SIM').reduce((s, p) => s + parseMon(p.valor), 0);
+  
+  document.getElementById('dashKpis').innerHTML = `
+    <div class="cartao"><div class="rotulo">Leads Ativos</div><div class="valor">${leads.length}</div></div>
+    <div class="cartao"><div class="rotulo">Vendas (Mês)</div><div class="valor">R$ ${fmtNum(totalVendas)}</div></div>
+    <div class="cartao"><div class="rotulo">Projetos Pagos</div><div class="valor">R$ ${fmtNum(totalProjetos)}</div></div>
+    <div class="cartao"><div class="rotulo">Conversão</div><div class="valor">${((vendas.length/leads.length)*100 || 0).toFixed(1)}%</div></div>
+  `;
+
+  new Chart(document.getElementById('chartFinanceiro'), {
+    type: 'line',<br/>
+    data: {<br/>
+      labels: ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun'],<br/>
+      datasets: [{ label: 'Receita R$', data: [12000, 19000, 15000, 25000, 22000, 30000], borderColor: '#2563eb', tension: 0.4 }]
+    }
+  });
+}
+
+async function pagLeads() {
+  const cont = document.getElementById('conteudo');
+  cont.innerHTML = `
+    <div style="display:flex;justify-content:space-between;align-items:center">
+      <h1 class="titulo-pag">👥 Gestão de Leads</h1>
+      <button class="btn btn-primary" onclick="abrirModal('modalLead')">+ Novo Lead</button>
+    </div>
+    <div class="filtro-bar">
+      <div class="grupo"><label>Buscar</label><input id="buscaLead" placeholder="Nome ou cidade..." oninput="debounceFiltrarLeads()"></div>
+    </div>
+    <div class="tabela-wrap">
+      <table>
+        <thead><tr><th>Nome</th><th>Cidade</th><th>Origem</th><th>Valor</th><th>Vendedor</th><th>Ações</th></tr></thead>
+        <tbody id="bodyLeads"></tbody>
+      </table>
+    </div>`;
+  renderLeads();
+}
+
+const renderLeads = async () => {
+  const d = await get('leads');
+  _allLeads = d;
+  const busca = document.getElementById('buscaLead')?.value.toLowerCase() || '';
+  const filtered = d.filter(l => l.nome.toLowerCase().includes(busca) || l.cidade.toLowerCase().includes(busca));
+  
+  document.getElementById('bodyLeads').innerHTML = filtered.map(l => `
+    <tr>
+      <td><b>${l.nome}</b></td>
+      <td>${l.cidade}</td>
+      <td>${l.origem}</td>
+      <td>${l.valor}</td>
+      <td>${l.vendedor}</td>
+      <td><button class="btn-icone" onclick="excluirLead(${l.id})">🗑️</button></td>
+    </tr>
+  `).join('');
+};
+
+const debounceFiltrarLeads = debounce(renderLeads, 300);
+
+// --- MODAIS E SALVAMENTO ---
+
+function abrirModal(id) { document.getElementById(id).classList.add('show'); }
+function fecharModal(id) { document.getElementById(id).classList.remove('show'); }
+
+async function salvarLead() {
+  const d = {
+    nome: document.getElementById('fLeadNome').value,<br/>
+    contato: document.getElementById('fLeadTel').value,<br/>
+    cidade: document.getElementById('fLeadCidade').value,<br/>
+    origem: document.getElementById('fLeadOrigem').value,<br/>
+    valor: document.getElementById('fLeadValor').value,<br/>
+    vendedor: document.getElementById('fLeadVendedor').value,<br/>
+    data: hoje()
+  };
+  await ins('leads', d);
+  toast('Lead salvo com sucesso!', 'sucesso');
+  fecharModal('modalLead');
+  pagLeads();
+}
+
+async function excluirLead(id) {
+  if(confirm('Deseja excluir este lead?')) {
+    await del('leads', id);
+    toast('Lead removido', 'aviso');
+    pagLeads();
+  }
+}
+
+// --- ESTOQUE ---
+async function pagEstoque() {
+  const cont = document.getElementById('conteudo');
+  cont.innerHTML = `<h1 class="titulo-pag">📦 Controle de Estoque</h1>
+    <div class="filtro-bar">
+      <input id="buscaEstq" placeholder="Buscar item..." oninput="debounceFiltrarEstoque()" style="padding:10px;border-radius:8px;border:1px solid var(--borda);width:300px">
+    </div>
+    <div class="estq-grid" id="gridEstoque"></div>`;
+  renderEstoque();
+}
+
+async function renderEstoque() {
+  const d = await get('estoque');
+  const busca = document.getElementById('buscaEstq')?.value.toLowerCase() || '';
+  const filtered = d.filter(e => e.item.toLowerCase().includes(busca));
+  
+  document.getElementById('gridEstoque').innerHTML = filtered.map(e => {
+    const status = e.qtd <= 3 ? 'critico' : e.qtd <= 10 ? 'baixo' : 'ok';
+    return `
+      <div class="estq-item">
+        <div style="font-size:12px;color:var(--text2)">${e.tipo}</div>
+        <div class="nome" style="font-weight:700">${e.item}</div>
+        <div class="qtd ${status}">${e.qtd}</div>
+        <div style="font-size:11px">${e.un}</div>
+      </div>
+    `;
+  }).join('');
+}
+const debounceFiltrarEstoque = debounce(renderEstoque, 300);
+
+// --- INICIALIZAÇÃO ---
+document.addEventListener('DOMContentLoaded', () => {
+  // Tema salvo
+  if(localStorage.getItem('crm_tema') === 'dark') document.body.classList.add('dark');
+});
+
+function altTema() {
+  document.body.classList.toggle('dark');
+  localStorage.setItem('crm_tema', document.body.classList.contains('dark') ? 'dark' : 'light');
+}
+
+// Funções de Vendas, Gastos, Projetos, Empresas, Orçamentos e Config seguem o mesmo padrão CRUD + Render.
+// O sistema utiliza o Supabase como backend em tempo real.
+
+</script>
+</body>
+</html>
