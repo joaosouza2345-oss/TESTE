@@ -14,8 +14,6 @@
 .dark{--bg:#0f1724;--bg2:#1a2332;--bg3:#1e293b;--text:#e2e8f0;--text2:#94a3b8;--side:#0d1321;--side-txt:#94a3b8;--side-hover:#1e293b;--borda:#2d3a4e;--primaria:#3b82f6;--sucesso:#22c55e;--perigo:#ef4444;--aviso:#fbbf24;--input-bg:#1e293b;--input-border:#334155;--header-bg:#0d1321;--header-txt:#e2e8f0}
 *{margin:0;padding:0;box-sizing:border-box;font-family:system-ui,sans-serif}
 body{background:var(--bg);color:var(--text);min-height:100vh}
-
-/* LOGIN */
 #telaLogin{display:flex;align-items:center;justify-content:center;min-height:100vh;background:linear-gradient(135deg,#0f1724,#1a2332);padding:16px}
 .login-box{background:#1a2332;padding:28px 24px;border-radius:14px;width:100%;max-width:360px}
 .login-box h1{color:#fff;font-size:20px;margin-bottom:4px}
@@ -23,8 +21,6 @@ body{background:var(--bg);color:var(--text);min-height:100vh}
 .login-box input{width:100%;padding:10px 12px;border:1px solid #334155;border-radius:6px;background:#0d1321;color:#fff;margin-bottom:14px;outline:none}
 .login-box input:focus{border-color:var(--primaria)}
 .login-box button{width:100%;padding:11px;background:var(--primaria);color:#fff;border:none;border-radius:6px;cursor:pointer;font-weight:600;font-size:14px}
-
-/* APP */
 #app{display:none}
 .topo{background:var(--header-bg);height:52px;display:flex;align-items:center;justify-content:space-between;padding:0 12px;position:fixed;top:0;left:0;right:0;z-index:100}
 .topo-left{display:flex;align-items:center;gap:10px}
@@ -35,14 +31,12 @@ body{background:var(--bg);color:var(--text);min-height:100vh}
 .sidebar-item:hover{background:var(--side-hover)}
 .sidebar-item.ativo{background:var(--side-hover);border-left-color:var(--primaria);color:#fff;font-weight:600}
 .conteudo{margin-left:200px;padding:16px;padding-top:68px;min-height:100vh}
-
-/* KPIs */
 .kpi-row{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:14px}
 .kpi-card{background:var(--bg2);border:1px solid var(--borda);border-radius:12px;padding:14px;border-left:4px solid var(--primaria)}
 .kpi-card .valor{font-size:22px;font-weight:700;margin-top:4px}
 .kpi-card .label{font-size:11px;color:var(--text2);text-transform:uppercase;letter-spacing:.5px}
-
-/* KANBAN */
+.dash-bottom{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:14px}
+.dash-cat-box{background:var(--bg2);border:1px solid var(--borda);border-radius:12px;padding:14px}
 .kanban-board{display:flex;gap:10px;overflow-x:auto;padding-bottom:12px;min-height:400px}
 .kanban-col{min-width:240px;max-width:300px;background:var(--bg3);border-radius:10px;padding:10px;display:flex;flex-direction:column;flex:1}
 .kanban-col h3{font-size:13px;margin-bottom:8px;display:flex;justify-content:space-between;padding:0 4px}
@@ -52,15 +46,11 @@ body{background:var(--bg);color:var(--text);min-height:100vh}
 .kanban-card .nome{font-weight:600;font-size:13px;margin-bottom:4px}
 .kanban-card .info{color:var(--text2);font-size:11px;margin:2px 0}
 .kanban-card .tag{display:inline-block;padding:2px 8px;border-radius:10px;font-size:10px;font-weight:600;margin-top:4px}
-
-/* TABELA */
 .tabela-wrap{overflow-x:auto;background:var(--bg2);border-radius:10px;border:1px solid var(--borda)}
 table{width:100%;border-collapse:collapse;font-size:13px}
 th,td{padding:8px 10px;border-bottom:1px solid var(--borda);text-align:left;white-space:nowrap}
 th{background:var(--bg3);font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:var(--text2)}
 tr:hover{background:var(--bg3)}
-
-/* BOTOES */
 .btn{padding:8px 16px;border-radius:6px;border:none;cursor:pointer;font-weight:600;font-size:13px;transition:opacity .2s;display:inline-flex;align-items:center;gap:4px}
 .btn:hover{opacity:.85}
 .btn-primary{background:var(--primaria);color:#fff}
@@ -69,8 +59,6 @@ tr:hover{background:var(--bg3)}
 .btn-outline{background:transparent;border:1px solid var(--borda);color:var(--text)}
 .btn-sm{padding:4px 10px;font-size:12px}
 .top-actions{display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap}
-
-/* MODAL */
 .modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:200;align-items:center;justify-content:center;padding:16px}
 .modal-overlay.show{display:flex}
 .modal{background:var(--bg2);padding:20px;border-radius:12px;width:700px;max-width:100%;max-height:90vh;overflow-y:auto}
@@ -87,28 +75,19 @@ tr:hover{background:var(--bg3)}
 .file-input-wrap input[type=file]{flex:1;padding:6px}
 .modal-actions{display:flex;gap:8px;margin-top:16px;flex-wrap:wrap}
 .file-list{margin-top:6px;font-size:11px;color:var(--text2)}
-
-/* SEARCH */
 .search-bar{display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap}
 .search-bar input{flex:1;min-width:180px;padding:8px 12px;border:1px solid var(--input-border);border-radius:6px;background:var(--input-bg);color:var(--text);font-size:13px;outline:none}
 .search-bar input:focus{border-color:var(--primaria)}
-
-/* CONFIG */
 .config-section{background:var(--bg2);border:1px solid var(--borda);border-radius:10px;padding:16px;margin-bottom:14px}
 .config-section h3{font-size:14px;margin-bottom:10px}
 .user-row{display:flex;align-items:center;gap:10px;padding:8px;border-bottom:1px solid var(--borda);font-size:13px}
 .user-row:last-child{border:none}
-
-/* TOAST */
 .toast{position:fixed;bottom:20px;right:20px;background:var(--bg2);border:1px solid var(--borda);border-radius:8px;padding:12px 16px;box-shadow:0 4px 12px rgba(0,0,0,.15);z-index:300;display:none;max-width:360px;font-size:13px}
 .toast.show{display:block;animation:fadeIn .3s}
 @keyframes fadeIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
-
-/* CHART */
 .chart-wrap{background:var(--bg2);border:1px solid var(--borda);border-radius:10px;padding:14px;margin-bottom:14px}
 .chart-wrap h3{font-size:14px;margin-bottom:8px}
 .chart-container{position:relative;height:250px}
-
 @media(max-width:768px){
 .menu-toggle{display:block}
 .sidebar{transform:translateX(-100%)}
@@ -149,7 +128,6 @@ tr:hover{background:var(--bg3)}
 <div class="conteudo" id="conteudo"></div>
 </div>
 
-<!-- MODAL PROJETO -->
 <div class="modal-overlay" id="modalProjeto">
 <div class="modal">
 <h2 id="tituloModalProj">Novo Projeto</h2>
@@ -190,7 +168,6 @@ tr:hover{background:var(--bg3)}
 </div>
 </div>
 
-<!-- MODAL EXPORTAR -->
 <div class="modal-overlay" id="modalExportar">
 <div class="modal">
 <h2>📊 Exportar Relatório</h2>
@@ -214,15 +191,46 @@ tr:hover{background:var(--bg3)}
 
 <script>
 // ═══════════════════════════════════════
-// CONFIG SUPABASE
+// CONFIG SUPABASE  🔴 COLE SUA ANON KEY
 // ═══════════════════════════════════════
 const SUPABASE_URL = 'https://zzcenbzqlzibrqnjooia.supabase.co'
-const SUPABASE_ANON_KEY = 'sb_publishable_mH9pJzsKhc2g0qwp2AW8PQ_8hrT-cW1' // 🔴 COLE A ANON KEY AQUI
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inp6Y2VuYnpxbHppYnJxbmpvb2lhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODM1NDI0OTUsImV4cCI6MjA5OTExODQ5NX0.Or-9slW0TtyPmf39NeqNrE9Zym2bXeCHgTFgSvO7X0s'
+
+if (SUPABASE_ANON_KEY === 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inp6Y2VuYnpxbHppYnJxbmpvb2lhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODM1NDI0OTUsImV4cCI6MjA5OTExODQ5NX0.Or-9slW0TtyPmf39NeqNrE9Zym2bXeCHgTFgSvO7X0s') {
+  document.body.innerHTML = '<div style="padding:40px;text-align:center;font-family:sans-serif;"><h2>🔴 Configure a SUPABASE_ANON_KEY</h2><p style="margin-top:12px;color:#555;">Abra o arquivo, localize a linha <code>const SUPABASE_ANON_KEY</code> e substitua pela chave do seu projeto Supabase.</p><p style="margin-top:8px;color:#888;font-size:13px;">Vá em: Project Settings &gt; API Settings &gt; anon public</p></div>'
+}
 
 const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
 
-let usuarioAtual = null, projetos = [], empresas = [], statusList = [], usuarios = []
+// ═══════════════════════════════════════
+// ESTADO GLOBAL
+// ═══════════════════════════════════════
+let usuarioAtual = null
+let projetos = []
+let empresas = []
+let statusList = []
+let usuarios = []
 let projetoEditandoId = null
+
+// ═══════════════════════════════════════
+// RESTAURAR SESSÃO (NÃO DESLOGA NO F5)
+// ═══════════════════════════════════════
+;(function restaurarSessao() {
+  try {
+    const salvo = localStorage.getItem('crm_usuario')
+    if (salvo) {
+      usuarioAtual = JSON.parse(salvo)
+      document.getElementById('telaLogin').style.display = 'none'
+      document.getElementById('app').style.display = 'block'
+      document.getElementById('userInfo').textContent = '👤 ' + usuarioAtual.nome + ' (' + usuarioAtual.funcao + ')'
+      // Aguarda DOM carregar e inicializa
+      setTimeout(() => init(), 100)
+    }
+  } catch (e) {
+    console.warn('Sessão anterior inválida, ignorando.')
+    localStorage.removeItem('crm_usuario')
+  }
+})()
 
 // ═══════════════════════════════════════
 // FUNÇÕES AUXILIARES
@@ -333,11 +341,12 @@ async function logar() {
     if (error || !data) { mostrarErro('Usuário não encontrado'); return }
     if (data.senha !== pass) { mostrarErro('Senha incorreta'); return }
     usuarioAtual = data
+    localStorage.setItem('crm_usuario', JSON.stringify(data))
     document.getElementById('telaLogin').style.display = 'none'
     document.getElementById('app').style.display = 'block'
     document.getElementById('userInfo').textContent = '👤 ' + data.nome + ' (' + data.funcao + ')'
     init()
-  } catch (e) { mostrarErro('Erro: ' + e.message) }
+  } catch (e) { mostrarErro('Erro ao conectar: ' + e.message) }
 }
 
 function mostrarErro(msg) {
@@ -348,6 +357,7 @@ function mostrarErro(msg) {
 
 function sair() {
   usuarioAtual = null
+  localStorage.removeItem('crm_usuario')
   document.getElementById('app').style.display = 'none'
   document.getElementById('telaLogin').style.display = 'flex'
 }
@@ -369,7 +379,12 @@ function altTema() {
 // ═══════════════════════════════════════
 function init() {
   renderSidebar()
-  carregarDados().then(() => renderDashboard())
+  carregarDados().then(() => {
+    renderDashboard()
+  }).catch(e => {
+    console.error('Erro ao carregar dados iniciais:', e)
+    document.getElementById('conteudo').innerHTML = '<div style="padding:30px;text-align:center;"><h3>❌ Erro ao carregar dados</h3><p style="margin-top:8px;color:var(--text2);">' + e.message + '</p><p style="margin-top:12px;font-size:13px;color:var(--text2);">Verifique no console do navegador (F12) e confirme se as tabelas "projetos", "empresas", "status_projetos" e "usuarios" existem no Supabase.</p></div>'
+  })
 }
 
 function renderSidebar() {
@@ -391,7 +406,7 @@ function renderSidebar() {
       document.querySelectorAll('.sidebar-item').forEach(e => e.classList.remove('ativo'))
       div.classList.add('ativo')
       mostrarPagina(item.id)
-      if (window.innerWidth &lt;= 768) sb.classList.remove('open')
+      if (window.innerWidth <= 768) sb.classList.remove('open')
     }
     sb.appendChild(div)
   })
@@ -399,6 +414,7 @@ function renderSidebar() {
 }
 
 async function carregarDados() {
+  console.log('Carregando dados do Supabase...')
   try {
     const [p, e, s, u] = await Promise.all([
       supabase.from('projetos').select('*').order('created_at', { ascending: false }),
@@ -406,20 +422,34 @@ async function carregarDados() {
       supabase.from('status_projetos').select('*').order('ordem'),
       supabase.from('usuarios').select('*')
     ])
-    if (p.data) projetos = p.data
-    if (e.data) empresas = e.data
-    if (s.data) statusList = s.data
-    if (u.data) usuarios = u.data
-  } catch (e) { console.error(e) }
+    if (p.error) throw new Error('Erro na tabela projetos: ' + p.error.message)
+    if (e.error) throw new Error('Erro na tabela empresas: ' + e.error.message)
+    if (s.error) throw new Error('Erro na tabela status_projetos: ' + s.error.message)
+    if (u.error) throw new Error('Erro na tabela usuarios: ' + u.error.message)
+    
+    projetos = p.data || []
+    empresas = e.data || []
+    statusList = s.data || []
+    usuarios = u.data || []
+    console.log('Dados carregados:', { projetos: projetos.length, empresas: empresas.length, status: statusList.length, usuarios: usuarios.length })
+  } catch (e) {
+    console.error('Falha ao carregar dados:', e)
+    throw e
+  }
 }
 
 async function mostrarPagina(pagina) {
-  await carregarDados()
-  if (pagina === 'dashboard') renderDashboard()
-  else if (pagina === 'kanban') renderKanban()
-  else if (pagina === 'tabela') renderTabela()
-  else if (pagina === 'graficos') renderGraficos()
-  else if (pagina === 'config') renderConfig()
+  document.getElementById('conteudo').innerHTML = '<div style="padding:30px;text-align:center;color:var(--text2);">⏳ Carregando...</div>'
+  try {
+    await carregarDados()
+    if (pagina === 'dashboard') renderDashboard()
+    else if (pagina === 'kanban') renderKanban()
+    else if (pagina === 'tabela') renderTabela()
+    else if (pagina === 'graficos') renderGraficos()
+    else if (pagina === 'config') renderConfig()
+  } catch (e) {
+    document.getElementById('conteudo').innerHTML = '<div style="padding:30px;text-align:center;"><h3>❌ Erro</h3><p style="margin-top:8px;color:var(--text2);">' + e.message + '</p></div>'
+  }
 }
 
 // ═══════════════════════════════════════
@@ -448,7 +478,7 @@ function renderDashboard() {
       <tbody>
         ${projetos.slice(0, 10).map(p => `
           <tr>
-            <td><strong>${p.cliente}</strong></td>
+            <td><strong>${p.cliente || '-'}</strong></td>
             <td>${fmtMoeda(parseValor(p.valor))}</td>
             <td>${p.status || '-'}</td>
             <td>${fmtData(p.data)}</td>
@@ -464,7 +494,7 @@ function renderDashboard() {
 // KANBAN
 // ═══════════════════════════════════════
 function renderKanban() {
-  let html = `<div class="kanban-board">`
+  let html = '<div class="kanban-board">'
   statusList.forEach(s => {
     const cards = projetos.filter(p => p.status === s.nome)
     html += `
@@ -472,7 +502,7 @@ function renderKanban() {
       <h3>${s.nome} <span>${cards.length}</span></h3>
       ${cards.map(p => `
         <div class="kanban-card" onclick="editarProjeto('${p.id}')">
-          <div class="nome">${p.cliente}</div>
+          <div class="nome">${p.cliente || '-'}</div>
           <div class="info">${fmtMoeda(parseValor(p.valor))}</div>
           <div class="info">📅 ${fmtData(p.data_instalacao || p.data)}</div>
           <div class="info">⚡ ${p.potencia || '-'} kWp</div>
@@ -480,7 +510,7 @@ function renderKanban() {
         </div>`).join('')}
     </div>`
   })
-  html += `</div>`
+  html += '</div>'
   document.getElementById('conteudo').innerHTML = html
 }
 
@@ -494,7 +524,7 @@ function renderTabela() {
   </div>
   <div class="tabela-wrap">
     <table>
-      <thead><tr><th>Cliente</th><th>Empresa</th><th>Valor</th><th>TRT</th><th>Potência</th><th>Status</th><th>Pago</th><th>Drive</th><th>Ações</th></tr></thead>
+      <thead><tr><th>Cliente</th><th>Empresa</th><th>Valor</th><th>TRT</th><th>Potência</th><th>Status</th><th>Data</th><th>Pago</th><th>Drive</th><th>Ações</th></tr></thead>
       <tbody id="corpoTabela"></tbody>
     </table>
   </div>`
@@ -506,12 +536,13 @@ function filtrarTabela() {
   const f = projetos.filter(p => !b || (p.cliente || '').toLowerCase().includes(b) || (p.empresa || '').toLowerCase().includes(b))
   document.getElementById('corpoTabela').innerHTML = f.map(p => `
     <tr>
-      <td><strong>${p.cliente}</strong></td>
+      <td><strong>${p.cliente || '-'}</strong></td>
       <td>${p.empresa || '-'}</td>
       <td>${fmtMoeda(parseValor(p.valor))}</td>
       <td>${fmtMoeda(parseValor(p.trt))}</td>
       <td>${p.potencia || '-'}</td>
       <td>${p.status || '-'}</td>
+      <td>${fmtData(p.data)}</td>
       <td>${p.pago === 'SIM' ? '✅' : '❌'}</td>
       <td>${p.drive_link ? '<a href="' + p.drive_link + '" target="_blank" style="color:var(--primaria);">📁</a>' : '-'}</td>
       <td><button class="btn btn-sm btn-primary" onclick="editarProjeto('${p.id}')">✏️</button></td>
@@ -528,19 +559,25 @@ function renderGraficos() {
   
   const cores = ['#3b82f6','#22c55e','#f59e0b','#ef4444','#8b5cf6','#ec4899','#14b8a6']
   
-  new Chart(document.getElementById('chartStatus'), {
-    type: 'bar',
-    data: { labels: statusList.map(s => s.nome), datasets: [{ label: 'Projetos', data: statusList.map(s => projetos.filter(p => p.status === s.nome).length), backgroundColor: cores.slice(0, statusList.length) }] },
-    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
-  })
+  const ctx1 = document.getElementById('chartStatus')
+  if (ctx1) {
+    new Chart(ctx1, {
+      type: 'bar',
+      data: { labels: statusList.map(s => s.nome), datasets: [{ label: 'Projetos', data: statusList.map(s => projetos.filter(p => p.status === s.nome).length), backgroundColor: cores.slice(0, statusList.length) }] },
+      options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
+    })
+  }
   
   const emp = {}
   projetos.forEach(p => { const e = p.empresa || 'Sem empresa'; emp[e] = (emp[e] || 0) + parseValor(p.valor) })
-  new Chart(document.getElementById('chartEmpresas'), {
-    type: 'pie',
-    data: { labels: Object.keys(emp), datasets: [{ data: Object.values(emp), backgroundColor: cores }] },
-    options: { responsive: true, maintainAspectRatio: false, plugins: { tooltip: { callbacks: { label: ctx => ctx.label + ': ' + fmtMoeda(ctx.raw) } } } }
-  })
+  const ctx2 = document.getElementById('chartEmpresas')
+  if (ctx2) {
+    new Chart(ctx2, {
+      type: 'pie',
+      data: { labels: Object.keys(emp), datasets: [{ data: Object.values(emp), backgroundColor: cores }] },
+      options: { responsive: true, maintainAspectRatio: false, plugins: { tooltip: { callbacks: { label: ctx => ctx.label + ': ' + fmtMoeda(ctx.raw) } } } }
+    })
+  }
 }
 
 // ═══════════════════════════════════════
@@ -609,7 +646,6 @@ async function salvarModalProj() {
     
     mostrarToast('Projeto salvo! ✅', 'sucesso')
     
-    // ─── ENVIAR ARQUIVOS PARA O GOOGLE DRIVE ───
     if (res.data && res.data.id) {
       await enviarParaDrive(res.data.id, cliente, dados.empresa)
     }
@@ -619,7 +655,7 @@ async function salvarModalProj() {
     const ativo = document.querySelector('.sidebar-item.ativo')
     if (ativo) mostrarPagina(ativo.dataset.page)
   } catch (e) {
-    mostrarToast('Erro: ' + e.message, 'erro')
+    mostrarToast('Erro ao salvar: ' + e.message, 'erro')
   }
 }
 
@@ -649,7 +685,7 @@ function exportarPDF() {
   if (incluirInst) cols.push('Data Inst.')
   
   const rows = lista.map(p => {
-    const r = [p.cliente, fmtMoeda(parseValor(p.valor)), p.status, fmtData(p.data), p.pago]
+    const r = [p.cliente || '-', fmtMoeda(parseValor(p.valor)), p.status || '-', fmtData(p.data), p.pago || 'NÃO']
     if (incluirInst) r.push(fmtData(p.data_instalacao))
     return r
   })
@@ -688,7 +724,7 @@ function exportarExcel() {
 // ═══════════════════════════════════════
 function renderConfig() {
   if (usuarioAtual.funcao !== 'Administrador') {
-    document.getElementById('conteudo').innerHTML = '<p style="padding:20px;">Apenas administradores.</p>'
+    document.getElementById('conteudo').innerHTML = '<p style="padding:20px;">Apenas administradores podem acessar.</p>'
     return
   }
   
@@ -718,7 +754,7 @@ function renderConfig() {
   <div class="config-section">
     <h3>🔗 Integração Google Drive</h3>
     <p style="font-size:13px;">Status: <span style="color:var(--sucesso);font-weight:600;">✅ Ativo</span></p>
-    <p style="font-size:12px;color:var(--text2);">Arquivos são enviados automaticamente ao Google Drive ao salvar projetos.</p>
+    <p style="font-size:12px;color:var(--text2);">Arquivos enviados automaticamente ao Salvar.</p>
   </div>`
 }
 
