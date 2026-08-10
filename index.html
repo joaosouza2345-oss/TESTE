@@ -811,11 +811,145 @@ async function editUser(id){var d=await get('usuarios');var u=d.find(function(x)
 async function addUser(){var n=document.getElementById('cNome').value.trim(),u=document.getElementById('cUser').value.trim(),p=document.getElementById('cPass').value.trim(),f=document.getElementById('cFun').value,emp=document.getElementById('cEmpresa').value.trim();if(!n||!u){document.getElementById('cMsg').textContent='Preencha nome e usuário';document.getElementById('cMsg').style.color='var(--perigo)';return}if(!idxEditUser&&!p){document.getElementById('cMsg').textContent='Informe a senha';document.getElementById('cMsg').style.color='var(--perigo)';return}if(f=='Empresa'&&!emp){document.getElementById('cMsg').textContent='Informe a empresa';document.getElementById('cMsg').style.color='var(--perigo)';return}if(!idxEditUser){var ex=await get('usuarios');if(ex.find(function(x){return x.usuario==u})){document.getElementById('cMsg').textContent='Usuário já existe';document.getElementById('cMsg').style.color='var(--perigo)';return}}var dados={nome:n,usuario:u,funcao:f,empresa:emp};if(p)dados.senha=p;if(idxEditUser){await upd('usuarios',idxEditUser,dados)}else{await ins('usuarios',dados)}document.getElementById('cMsg').textContent=idxEditUser?'✅ Atualizado!':'✅ Cadastrado!';document.getElementById('cMsg').style.color='var(--sucesso)';document.getElementById('cNome').value='';document.getElementById('cUser').value='';document.getElementById('cPass').value='';document.getElementById('cEmpresa').value='';document.querySelector('#conteudo .btn-primary').textContent='+ Cadastrar';idxEditUser=null;pagConfig()}
 async function fazerBackup(){var msg=document.getElementById('bkMsg');if(!msg)return;msg.textContent='Gerando backup...';msg.style.color='var(--aviso)';try{var wb=XLSX.utils.book_new();var tabelas=['leads','vendas','gastos','empresas','projetos','estoque','orcamentos','usuarios'];for(var i=0;i<tabelas.length;i++){var data=await get(tabelas[i]);if(tabelas[i]==='projetos'){data=data.map(function(p){var c=Object.assign({},p);if(c.documentos){try{c.documentos=JSON.parse(c.documentos).map(function(d){return d.nome}).join('; ')}catch(e){}}if(c.fotos){try{c.fotos=JSON.parse(c.fotos).length+' foto(s)'}catch(e){}}return c})}if(tabelas[i]==='orcamentos'){data=data.map(function(o){var c=Object.assign({},o);if(c.itens){try{c.itens=JSON.stringify(c.itens)}catch(e){}}return c})}var ws=XLSX.utils.json_to_sheet(data.length?data:[{aviso:'Sem dados'}]);XLSX.utils.book_append_sheet(wb,ws,tabelas[i])}XLSX.writeFile(wb,'backup_crm_'+hoje().replace(/\//g,'-')+'.xlsx');msg.textContent='✅ Backup gerado!';msg.style.color='var(--sucesso)'}catch(e){msg.textContent='Erro: '+e.message;msg.style.color='var(--perigo)'}}
 async function rmUser(id){if(!confirm('Remover?'))return;await del('usuarios',id);pagConfig()}
-// ===== FINANCEIRO (filtros + lote de cobrança) =====
-// ===== FINANCEIRO - LOTE DE COBRANÇA (Supabase) =====
+// ===== FINANCEIRO (COMPLETO) =====
 var loteSelecao = [];
+var lotesCobranca = [];
 
 async function carregarLotes(){lotesCobranca = await get('lotes')}
+
+async function pagFinanceiro(){
+  carregarLotes();
+  var m=document.getElementById('conteudo');
+  var d=await get('projetos');
+  _allProjetos=d;
+  var agora=new Date();
+  var emps=[...new Set(d.map(function(p){return p.empresa}).filter(Boolean))].sort();
+  var h='<div class="titulo-pag">💵 Financeiro</div>';
+  h+='<div class="filtro-bar">';
+  h+='<div class="grupo"><label>Empresa</label><select id="fFinEmp" onchange="filtrarFinanceiro()"><option value="">Todas</option>'+emps.map(function(e){return'<option>'+e+'</option>'}).join('')+'</select></div>';
+  h+='<div class="grupo"><label>Mês</label><select id="fFinMes" onchange="filtrarFinanceiro()"><option value="">Todos os meses</option>'+meses().map(function(e,i){return'<option value="'+i+'"'+(i==agora.getMonth()?' selected':'')+'>'+e+'</option>'}).join('')+'</select></div>';
+  h+='<div class="grupo"><label>Ano</label><select id="fFinAno" onchange="filtrarFinanceiro()"><option value="">Todos</option></select></div>';
+  h+='<div class="grupo"><label>Pagamento</label><select id="fFinPago" onchange="filtrarFinanceiro()"><option value="">Todos</option><option value="NÃO">Não pago</option><option value="SIM">Pago</option></select></div>';
+  h+='<button class="btn btn-outline" onclick="limparFiltrosFinanceiro()">Limpar</button>';
+  h+='<button class="btn btn-primary" onclick="finAddSelecionados()">➕ Add ao lote</button>';
+  h+='<button class="btn btn-success" onclick="gerarPDFFinanceiro(\'consolidado\')">📄 PDF Consolidado</button>';
+  h+='</div>';
+  h+='<div id="finResumo"></div><div id="finEmpresas"></div>';
+  h+='<div class="titulo-pag" style="margin-top:22px">📦 Lote de Cobrança</div>';
+  h+='<div class="filtro-bar" style="align-items:center">';
+  h+='<div class="grupo"><label>Nota (NF)</label><input id="loteNota" placeholder="Ex: 1234"></div>';
+  h+='<div class="grupo"><label>Ref (opcional)</label><input id="loteRef" placeholder="Ex: João / Setembro"></div>';
+  h+='<button class="btn btn-primary" onclick="salvarLote()">💾 Salvar Lote</button>';
+  h+='<span id="loteInfo" style="font-size:12px;color:var(--text2)">0 projetos • R$ 0,00</span>';
+  h+='</div>';
+  h+='<div class="tabela-wrap"><table><thead><tr><th>Projeto</th><th>Empresa</th><th>Valor</th><th>Data</th><th>Ação</th></tr></thead><tbody id="loteBody"></tbody></table></div>';
+  h+='<div id="lotesList"></div>';
+  m.innerHTML=h;
+  var anos=[...new Set(d.map(function(p){var dt=p.data_instalacao||p.data||'';var b=dt.split('/');return b.length==3?b[2]:''}).filter(Boolean))].sort().reverse();
+  var selAno=document.getElementById('fFinAno');
+  selAno.innerHTML='<option value="">Todos</option>';
+  anos.forEach(function(a){selAno.innerHTML+='<option>'+a+'</option>'});
+  if(anos.indexOf(String(agora.getFullYear()))>=0)selAno.value=String(agora.getFullYear());
+  filtrarFinanceiro();
+  renderLoteAtual();
+  renderLotes();
+}
+
+function limparFiltrosFinanceiro(){
+  if(document.getElementById('fFinEmp'))document.getElementById('fFinEmp').value='';
+  if(document.getElementById('fFinMes'))document.getElementById('fFinMes').value='';
+  if(document.getElementById('fFinAno'))document.getElementById('fFinAno').value='';
+  if(document.getElementById('fFinPago'))document.getElementById('fFinPago').value='';
+  filtrarFinanceiro();
+}
+
+function filtrarFinanceiro(){
+  var empF=document.getElementById('fFinEmp')?document.getElementById('fFinEmp').value:'';
+  var mesF=document.getElementById('fFinMes')?document.getElementById('fFinMes').value:'';
+  var anoF=document.getElementById('fFinAno')?document.getElementById('fFinAno').value:'';
+  var pagoF=document.getElementById('fFinPago')?document.getElementById('fFinPago').value:'';
+  var d=_allProjetos.filter(function(p){
+    if(empF&&(p.empresa||'')!=empF)return false;
+    if(pagoF=='SIM'&&(p.pago||'NÃO')!='SIM')return false;
+    if(pagoF=='NÃO'&&(p.pago||'NÃO')=='SIM')return false;
+    var dt=p.data_instalacao||p.data||'';
+    var b=dt.split('/');
+    if(b.length!=3)return mesF===''&&anoF==='';
+    if(mesF!==''&&parseInt(b[1])!=(parseInt(mesF)+1))return false;
+    if(anoF!==''&&b[2]!=anoF)return false;
+    return true;
+  });
+  var porEmp={};
+  d.forEach(function(p){var e=p.empresa||'Sem empresa';if(!porEmp[e])porEmp[e]=[];porEmp[e].push(p)});
+  var emps=Object.keys(porEmp).sort();
+  var totalGeral=d.reduce(function(s,p){return s+parseMon(p.valor)},0);
+  var naoPagos=d.filter(function(p){return(p.pago||'NÃO')!='SIM'}).length;
+  document.getElementById('finResumo').innerHTML='<div class="cartoes">'+
+    '<div class="cartao"><div class="rotulo">Projetos</div><div class="valor">'+d.length+'</div></div>'+
+    '<div class="cartao"><div class="rotulo">Total</div><div class="valor">R$ '+fmtNum(totalGeral)+'</div></div>'+
+    '<div class="cartao"><div class="rotulo">Não pagos</div><div class="valor">'+naoPagos+'</div></div>'+
+    '<div class="cartao"><div class="rotulo">Empresas</div><div class="valor">'+emps.length+'</div></div></div>';
+  var h='';
+  emps.forEach(function(e){
+    var projs=porEmp[e];
+    var tot=projs.reduce(function(s,p){return s+parseMon(p.valor)},0);
+    h+='<div style="display:flex;justify-content:space-between;align-items:center;margin:16px 0 8px;flex-wrap:wrap;gap:8px"><h3 style="font-size:15px">🏢 '+e+'</h3><button class="btn btn-outline" onclick="gerarPDFFinanceiro(\''+e+'\')">📄 PDF '+e+'</button></div>';
+    h+='<div class="tabela-wrap"><table><thead><tr><th style="width:34px"><input type="checkbox" onchange="finCheckAllEmpresa(this,\''+e+'\')" title="Marcar todos"></th><th>Cliente</th><th>Valor</th><th>Potência</th><th>Data</th><th>Pago</th></tr></thead><tbody>';
+    projs.forEach(function(p){
+      h+='<tr><td><input type="checkbox" class="fin-chk" data-id="'+p.id+'" data-emp="'+e+'" onchange="finAtualizarLoteInfo()"></td>';
+      h+='<td><strong>'+p.cliente+'</strong></td><td>R$ '+fmtNum(parseMon(p.valor))+'</td><td>'+(p.potencia||'—')+'</td><td>'+(p.data_instalacao||p.data||'—')+'</td>';
+      h+='<td>'+(p.pago=='SIM'?'✅':'⏳')+'</td></tr>';
+    });
+    h+='<tr style="font-weight:700;background:var(--bg3)"><td></td><td>TOTAL '+e+'</td><td>R$ '+fmtNum(tot)+'</td><td></td><td></td><td></td></tr>';
+    h+='</tbody></table></div>';
+  });
+  if(!emps.length)h='<p style="color:var(--text2);padding:20px">Nenhum projeto encontrado com esses filtros.</p>';
+  document.getElementById('finEmpresas').innerHTML=h;
+  window._FIN=d;window._FIN_MES=mesF;window._FIN_ANO=anoF;window._FIN_EMP=empF;
+}
+
+function finAtualizarLoteInfo(){
+  var boxes=document.querySelectorAll('input.fin-chk:checked');
+  var total=0;
+  for(var i=0;i<boxes.length;i++){
+    var p=(_allProjetos||[]).find(function(x){return x.id==parseInt(boxes[i].dataset.id)});
+    if(p)total+=parseMon(p.valor);
+  }
+  var el=document.getElementById('loteInfo');
+  if(el)el.textContent=boxes.length+' selecionado(s) • R$ '+fmtNum(total);
+}
+function finCheckAllEmpresa(cb,emp){
+  var boxes=document.querySelectorAll('input.fin-chk[data-emp="'+emp+'"]');
+  for(var i=0;i<boxes.length;i++)boxes[i].checked=cb.checked;
+  finAtualizarLoteInfo();
+}
+function finAddSelecionados(){
+  var boxes=document.querySelectorAll('input.fin-chk:checked');
+  var added=0;
+  for(var i=0;i<boxes.length;i++){
+    var id=parseInt(boxes[i].dataset.id);
+    if(loteSelecao.indexOf(id)==-1){loteSelecao.push(id);added++}
+  }
+  if(!added){alert('Marque os projetos que deseja adicionar ao lote.');return}
+  alert(added+' projeto(s) adicionado(s) ao lote!');
+  renderLoteAtual();
+}
+function renderLoteAtual(){
+  var tb=document.getElementById('loteBody');
+  if(!tb)return;
+  tb.innerHTML='';
+  var total=0;
+  loteSelecao.forEach(function(id,i){
+    var p=(_allProjetos||[]).find(function(x){return x.id==id});
+    if(!p)return;
+    total+=parseMon(p.valor);
+    tb.innerHTML+='<tr><td><strong>'+p.cliente+'</strong></td><td>'+(p.empresa||'—')+'</td><td>R$ '+fmtNum(parseMon(p.valor))+'</td><td>'+(p.data_instalacao||p.data||'—')+'</td><td><button class="btn-icone" onclick="finRemoverLote('+i+')">🗑️</button></td></tr>';
+  });
+  if(!loteSelecao.length)tb.innerHTML='<tr><td colspan="5" style="text-align:center;padding:20px;color:var(--text2)">Nenhum projeto no lote. Marque projetos acima e clique em "➕ Add ao lote".</td></tr>';
+  var info=document.getElementById('loteInfo');
+  if(info)info.textContent=loteSelecao.length+' projetos • R$ '+fmtNum(total);
+}
+function finRemoverLote(i){loteSelecao.splice(i,1);renderLoteAtual()}
 
 async function salvarLote(){
   if(!loteSelecao.length){alert('Adicione projetos ao lote antes de salvar.');return}
@@ -826,8 +960,7 @@ async function salvarLote(){
     var p=(_allProjetos||[]).find(function(x){return x.id==id});
     if(p){projs.push({id:p.id,cliente:p.cliente,empresa:p.empresa||'',valor:parseMon(p.valor)});total+=parseMon(p.valor)}
   });
-  var dados={nota:nota||'—',ref:ref,data:hoje(),pago:'NÃO',total:total,projetos:projs};
-  var r=await ins('lotes',dados);
+  var r=await ins('lotes',{nota:nota||'—',ref:ref,data:hoje(),pago:'NÃO',total:total,projetos:projs});
   if(!r){alert('Erro ao salvar lote. Veja o console (F12).');return}
   loteSelecao=[];
   document.getElementById('loteNota').value='';
@@ -858,7 +991,6 @@ async function renderLotes(){
     h+=l.projetos.length+' projeto(s) • Total: <strong style="color:var(--sucesso)">R$ '+fmtNum(l.total)+'</strong>';
     if(pago&&l.data_pagamento)h+=' • Pago em: '+l.data_pagamento;
     h+='</div>';
-    // Nota fiscal
     h+='<div style="margin-top:8px;padding-top:8px;border-top:1px solid var(--borda);font-size:12px">';
     h+='<strong>📎 Nota Fiscal:</strong> ';
     if(l.nota_fiscal){
@@ -880,11 +1012,9 @@ async function marcarLotePago(id){
   var l=lotesCobranca.find(function(x){return x.id==id});
   if(!l)return;
   var hojeTxt=hoje();
-  // Atualiza todos os projetos do lote
   for(var i=0;i<l.projetos.length;i++){
     await upd('projetos',l.projetos[i].id,{pago:'SIM',data_pagamento:hojeTxt});
   }
-  // Atualiza o lote
   await upd('lotes',id,{pago:'SIM',data_pagamento:hojeTxt});
   limparCache();
   alert('✅ Lote marcado como pago! '+l.projetos.length+' projeto(s) atualizado(s).');
@@ -947,6 +1077,32 @@ function gerarPDFLote(idx){
     doc.save('lote_cobranca_'+(l.nota||'sem_nota')+'.pdf');
   }catch(e){alert('Erro PDF: '+e.message)}
 }
+
+function gerarPDFFinanceiro(emp){
+  var d=window._FIN||[];
+  if(emp!='consolidado')d=d.filter(function(p){return(p.empresa||'Sem empresa')==emp});
+  var mesF=window._FIN_MES||'';
+  var anoF=window._FIN_ANO||'';
+  var nomePeriodo=mesF!==''?meses()[parseInt(mesF)]+(anoF?'/'+anoF:''):(anoF?anoF:'Geral');
+  try{
+    var doc=new jspdf.jsPDF();
+    doc.setFontSize(16);doc.text('SF Projetos Elétricos - Cobrança '+nomePeriodo,14,20);
+    if(emp!='consolidado'){doc.setFontSize(12);doc.text('Empresa: '+emp,14,28)}
+    doc.setFontSize(10);doc.text('Gerado: '+hoje(),14,34);
+    var head=['Cliente','Valor','Potência (kWp)','Pago'];
+    var body=d.map(function(p){return[p.cliente||'','R$ '+fmtNum(parseMon(p.valor)),p.potencia||'',(p.pago=='SIM'?'Sim':'Não')]});
+    doc.autoTable({startY:40,head:[head],body:body,theme:'striped',headStyles:{fillColor:[37,99,235]}});
+    var finalY=doc.lastAutoTable.finalY+6;
+    var total=d.reduce(function(s,p){return s+parseMon(p.valor)},0);
+    doc.setDrawColor(37,99,235);doc.setLineWidth(0.5);
+    doc.line(14,finalY-4,doc.internal.pageSize.width-14,finalY-4);
+    doc.setFontSize(10);doc.setFont(undefined,'bold');
+    doc.text('TOTAL',14,finalY+4);
+    doc.text('R$ '+fmtNum(total),doc.internal.pageSize.width-14-40,finalY+4);
+    doc.save('cobranca_'+(mesF!==''?meses()[parseInt(mesF)]:'geral')+(anoF?'_'+anoF:'')+(emp!='consolidado'?'_'+emp:'')+'.pdf');
+  }catch(e){alert('Erro PDF: '+e.message)}
+}
+
 document.addEventListener('DOMContentLoaded',function(){if(localStorage.getItem('tema')=='dark'){document.body.classList.add('dark');document.getElementById('btnTema').textContent='☀️'}autoLogin()});
 </script>
 </body>
