@@ -831,22 +831,28 @@ async function pagFinanceiro(){
   }else{
     h+='<div class="grupo"><label>Empresa</label><select id="fFinEmp" onchange="filtrarFinanceiro()"><option value="">Todas</option>'+emps.map(function(e){return'<option>'+e+'</option>'}).join('')+'</select></div>';
   }
- h+='<div class="grupo"><label>Mês</label><select id="fFinMes" onchange="filtrarFinanceiro()"><option value="">Todos os meses</option>'+meses().map(function(e,i){return'<option value="'+i+'">'+e+'</option>'}).join('')+'</select></div>';
+  h+='<div class="grupo"><label>Mês</label><select id="fFinMes" onchange="filtrarFinanceiro()"><option value="">Todos os meses</option>'+meses().map(function(e,i){return'<option value="'+i+'">'+e+'</option>'}).join('')+'</select></div>';
   h+='<div class="grupo"><label>Ano</label><select id="fFinAno" onchange="filtrarFinanceiro()"><option value="">Todos</option></select></div>';
   h+='<div class="grupo"><label>Pagamento</label><select id="fFinPago" onchange="filtrarFinanceiro()"><option value="">Todos</option><option value="NÃO">Não pago</option><option value="SIM">Pago</option></select></div>';
   h+='<button class="btn btn-outline" onclick="limparFiltrosFinanceiro()">Limpar</button>';
-  h+='<button class="btn btn-primary" onclick="finAddSelecionados()">➕ Add ao lote</button>';
+  if(!isEmp){
+    h+='<button class="btn btn-primary" onclick="finAddSelecionados()">➕ Add ao lote</button>';
+  }
   h+='<button class="btn btn-success" onclick="gerarPDFFinanceiro(\'consolidado\')">📄 PDF Consolidado</button>';
   h+='</div>';
   h+='<div id="finResumo"></div><div id="finEmpresas"></div>';
-  h+='<div class="titulo-pag" style="margin-top:22px">📦 Lote de Cobrança</div>';
-  h+='<div class="filtro-bar" style="align-items:center">';
-  h+='<div class="grupo"><label>Nota (NF)</label><input id="loteNota" placeholder="Ex: 1234"></div>';
-  h+='<div class="grupo"><label>Ref (opcional)</label><input id="loteRef" placeholder="Ex: João / Setembro"></div>';
-  h+='<button class="btn btn-primary" onclick="salvarLote()">💾 Salvar Lote</button>';
-  h+='<span id="loteInfo" style="font-size:12px;color:var(--text2)">0 projetos • R$ 0,00</span>';
-  h+='</div>';
-  h+='<div class="tabela-wrap"><table><thead><tr><th>Projeto</th><th>Empresa</th><th>Valor</th><th>Data</th><th>Ação</th></tr></thead><tbody id="loteBody"></tbody></table></div>';
+  // Área de criação de lote: somente Administrador/Financeiro
+  if(!isEmp){
+    h+='<div class="titulo-pag" style="margin-top:22px">📦 Lote de Cobrança</div>';
+    h+='<div class="filtro-bar" style="align-items:center">';
+    h+='<div class="grupo"><label>Nota (NF)</label><input id="loteNota" placeholder="Ex: 1234"></div>';
+    h+='<div class="grupo"><label>Ref (opcional)</label><input id="loteRef" placeholder="Ex: João / Setembro"></div>';
+    h+='<button class="btn btn-primary" onclick="salvarLote()">💾 Salvar Lote</button>';
+    h+='<span id="loteInfo" style="font-size:12px;color:var(--text2)">0 projetos • R$ 0,00</span>';
+    h+='</div>';
+    h+='<div class="tabela-wrap"><table><thead><tr><th>Projeto</th><th>Empresa</th><th>Valor</th><th>Data</th><th>Ação</th></tr></thead><tbody id="loteBody"></tbody></table></div>';
+  }
+  h+='<div class="titulo-pag" style="margin-top:'+(isEmp?'22':'0')+'px">🗂️ Lotes</div>';
   h+='<div id="lotesList"></div>';
   m.innerHTML=h;
   var anos=[...new Set(d.map(function(p){var dt=p.data_instalacao||p.data||'';var b=dt.split('/');return b.length==3?b[2]:''}).filter(Boolean))].sort().reverse();
@@ -856,7 +862,7 @@ async function pagFinanceiro(){
   if(anos.indexOf(String(agora.getFullYear()))>=0)selAno.value=String(agora.getFullYear());
   window._FIN_ISEMP=isEmp;window._FIN_EMPREST=empRestrita;
   filtrarFinanceiro();
-  renderLoteAtual();
+  if(!isEmp)renderLoteAtual();
   renderLotes();
 }
 function limparFiltrosFinanceiro(){
@@ -874,17 +880,9 @@ function filtrarFinanceiro(){
   var mesF=document.getElementById('fFinMes')?document.getElementById('fFinMes').value:'';
   var anoF=document.getElementById('fFinAno')?document.getElementById('fFinAno').value:'';
   var pagoF=document.getElementById('fFinPago')?document.getElementById('fFinPago').value:'';
-
-  // Coleta os IDs dos projetos que JÁ estão em lotes (para não cobrar de novo)
   var idsEmLote={};
-  lotesCobranca.forEach(function(l){
-    (l.projetos||[]).forEach(function(x){
-      if(x.id)idsEmLote[x.id]=true;
-    });
-  });
-
+  lotesCobranca.forEach(function(l){(l.projetos||[]).forEach(function(x){if(x.id)idsEmLote[x.id]=true})});
   var d=_allProjetos.filter(function(p){
-    // Exclui projetos que já estão em algum lote
     if(idsEmLote[p.id])return false;
     if(empF&&(p.empresa||'')!=empF)return false;
     if(pagoF=='SIM'&&(p.pago||'NÃO')!='SIM')return false;
@@ -910,11 +908,12 @@ function filtrarFinanceiro(){
   emps.forEach(function(e){
     var projs=porEmp[e];
     var tot=projs.reduce(function(s,p){return s+parseMon(p.valor)},0);
+    var chkHead=isEmp?'':'<th style="width:34px"><input type="checkbox" onchange="finCheckAllEmpresa(this,\''+e+'\')" title="Marcar todos"></th>';
     h+='<div style="display:flex;justify-content:space-between;align-items:center;margin:16px 0 8px;flex-wrap:wrap;gap:8px"><h3 style="font-size:15px">🏢 '+e+'</h3><button class="btn btn-outline" onclick="gerarPDFFinanceiro(\''+e+'\')">📄 PDF '+e+'</button></div>';
-    h+='<div class="tabela-wrap"><table><thead><tr><th style="width:34px"><input type="checkbox" onchange="finCheckAllEmpresa(this,\''+e+'\')" title="Marcar todos"></th><th>Cliente</th><th>Valor</th><th>Potência</th><th>Data</th><th>Pago</th></tr></thead><tbody>';
+    h+='<div class="tabela-wrap"><table><thead><tr>'+chkHead+'<th>Cliente</th><th>Valor</th><th>Potência</th><th>Data</th><th>Pago</th></tr></thead><tbody>';
     projs.forEach(function(p){
-      h+='<tr><td><input type="checkbox" class="fin-chk" data-id="'+p.id+'" data-emp="'+e+'" onchange="finAtualizarLoteInfo()"></td>';
-      h+='<td><strong>'+p.cliente+'</strong></td><td>R$ '+fmtNum(parseMon(p.valor))+'</td><td>'+(p.potencia||'—')+'</td><td>'+(p.data_instalacao||p.data||'—')+'</td>';
+      var chkCell=isEmp?'':'<td><input type="checkbox" class="fin-chk" data-id="'+p.id+'" data-emp="'+e+'" onchange="finAtualizarLoteInfo()"></td>';
+      h+='<tr>'+chkCell+'<td><strong>'+p.cliente+'</strong></td><td>R$ '+fmtNum(parseMon(p.valor))+'</td><td>'+(p.potencia||'—')+'</td><td>'+(p.data_instalacao||p.data||'—')+'</td>';
       h+='<td>'+(p.pago=='SIM'?'✅':'⏳')+'</td></tr>';
     });
     h+='<tr style="font-weight:700;background:var(--bg3)"><td></td><td>TOTAL '+e+'</td><td>R$ '+fmtNum(tot)+'</td><td></td><td></td><td></td></tr>';
@@ -992,13 +991,11 @@ async function renderLotes(){
   var el=document.getElementById('lotesList');
   if(!el)return;
   var todos=await get('lotes');
-  // Filtra por empresa se o usuário for do tipo Empresa
   var isEmp=(usuarioAtual.funcao=='Empresa');
   var empTxt=isEmp?(usuarioAtual.empresa||'').toLowerCase():'';
   var lotes=todos;
   if(isEmp&&empTxt){
     lotes=todos.filter(function(l){
-      // Mostra só lotes que contenham projetos da empresa do usuário
       return (l.projetos||[]).some(function(x){
         var e=(x.empresa||'').toLowerCase();
         return e==empTxt||e.includes(empTxt)||empTxt.includes(e);
@@ -1007,32 +1004,46 @@ async function renderLotes(){
   }
   lotesCobranca=lotes;
   if(!lotes.length){el.innerHTML='<p style="color:var(--text2);margin-top:10px">Nenhum lote salvo ainda.</p>';return}
-  var h='<h3 style="font-size:14px;font-weight:600;margin:18px 0 8px">🗂️ Lotes salvos ('+lotes.length+')</h3>';
+  var h='<h3 style="font-size:14px;font-weight:600;margin:0 0 8px">'+lotes.length+' lote(s)</h3>';
   lotes.forEach(function(l,idx){
     var pago=l.pago=='SIM';
     h+='<div style="background:var(--bg2);border:1px solid '+(pago?'var(--sucesso)':'var(--borda)')+';border-radius:10px;padding:12px;margin-bottom:10px">';
     h+='<div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px">';
     h+='<div><strong>📦 Lote '+(l.nota||idx+1)+'</strong> <span style="font-size:12px;color:var(--text2)">'+l.data+'</span> <span style="font-size:11px;padding:2px 8px;border-radius:10px;font-weight:600;'+(pago?'background:rgba(34,197,94,.15);color:var(--sucesso)':'background:rgba(245,158,11,.15);color:var(--aviso)')+'">'+(pago?'✅ Pago':'⏳ Em aberto')+'</span></div>';
-    h+='<div style="display:flex;gap:6px;flex-wrap:wrap">'+(pago?'':'<button class="btn btn-success" onclick="marcarLotePago('+l.id+')">✅ Marcar como Pago</button>')+'<button class="btn btn-outline" onclick="gerarPDFLote('+idx+')">📄 PDF Lote</button>'+(isEmp?'':'<button class="btn btn-icone" onclick="excluirLote('+l.id+')">🗑️</button>')+'</div></div>';
-    h+='<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px;align-items:end">';
-    h+='<div class="grupo" style="margin-bottom:0"><label style="font-size:11px;color:var(--text2)">Nº Nota (NF)</label><input class="edita-input" style="width:110px" value="'+(l.nota||'')+'" placeholder="Ex: 0007" onchange="editNotaLote('+l.id+',\'nota\',this.value)"></div>';
-    h+='<div class="grupo" style="margin-bottom:0"><label style="font-size:11px;color:var(--text2)">Referência</label><input class="edita-input" style="width:150px" value="'+(l.ref||'')+'" placeholder="Ex: João / Setembro" onchange="editNotaLote('+l.id+',\'ref\',this.value)"></div>';
-    h+='<span style="font-size:12px;color:var(--text2)">'+l.projetos.length+' projeto(s) • Total: <strong style="color:var(--sucesso)">R$ '+fmtNum(l.total)+'</strong>'+(pago&&l.data_pagamento?' • Pago em: '+l.data_pagamento:'')+'</span>';
+    if(!isEmp){
+      h+='<div style="display:flex;gap:6px;flex-wrap:wrap">'+(pago?'':'<button class="btn btn-success" onclick="marcarLotePago('+l.id+')">✅ Marcar como Pago</button>')+'<button class="btn btn-outline" onclick="gerarPDFLote('+idx+')">📄 PDF Lote</button><button class="btn btn-icone" onclick="excluirLote('+l.id+')">🗑️</button></div>';
+    }
     h+='</div>';
+    if(!isEmp){
+      h+='<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px;align-items:end">';
+      h+='<div class="grupo" style="margin-bottom:0"><label style="font-size:11px;color:var(--text2)">Nº Nota (NF)</label><input class="edita-input" style="width:110px" value="'+(l.nota||'')+'" placeholder="Ex: 0007" onchange="editNotaLote('+l.id+',\'nota\',this.value)"></div>';
+      h+='<div class="grupo" style="margin-bottom:0"><label style="font-size:11px;color:var(--text2)">Referência</label><input class="edita-input" style="width:150px" value="'+(l.ref||'')+'" placeholder="Ex: João / Setembro" onchange="editNotaLote('+l.id+',\'ref\',this.value)"></div>';
+      h+='<span style="font-size:12px;color:var(--text2)">'+l.projetos.length+' projeto(s) • Total: <strong style="color:var(--sucesso)">R$ '+fmtNum(l.total)+'</strong>'+(pago&&l.data_pagamento?' • Pago em: '+l.data_pagamento:'')+'</span>';
+      h+='</div>';
+    }else{
+      h+='<div style="font-size:12px;color:var(--text2);margin-top:8px">';
+      h+='Nº Nota: <strong>'+(l.nota||'—')+'</strong>'+(l.ref?' • Ref: <strong>'+l.ref+'</strong>':'')+' • '+l.projetos.length+' projeto(s) • Total: <strong style="color:var(--sucesso)">R$ '+fmtNum(l.total)+'</strong>'+(pago&&l.data_pagamento?' • Pago em: '+l.data_pagamento:'');
+      h+='</div>';
+    }
     h+='<div style="margin-top:8px;padding-top:8px;border-top:1px solid var(--borda);font-size:12px">';
     h+='<strong>📎 Nota Fiscal:</strong> ';
     if(l.nota_fiscal){
       h+='<a href="javascript:void(0)" onclick="abrirNotaFiscal('+l.id+')" style="color:var(--primaria);text-decoration:none;font-weight:600">📄 '+(l.nota_fiscal_nome||'Ver PDF')+'</a>';
-      h+=' <button class="btn-icone" onclick="removerNotaFiscal('+l.id+')" title="Remover NF">🗑️</button>';
+      if(!isEmp){
+        h+=' <button class="btn-icone" onclick="removerNotaFiscal('+l.id+')" title="Remover NF">🗑️</button>';
+      }
     }else{
       h+='<span style="color:var(--text2)">Nenhuma anexada.</span> ';
     }
-    h+='<input type="file" accept="application/pdf,.pdf" style="font-size:11px;margin-left:6px" onchange="anexarNotaFiscal('+l.id+',this)">';
+    if(!isEmp){
+      h+='<input type="file" accept="application/pdf,.pdf" style="font-size:11px;margin-left:6px" onchange="anexarNotaFiscal('+l.id+',this)">';
+    }
     h+='</div>';
     h+='<div style="font-size:11px;color:var(--text2);margin-top:4px">'+l.projetos.map(function(x){return x.cliente}).join(', ')+'</div>';
     h+='</div>';
   });
   el.innerHTML=h;
+}
 }
 async function editNotaLote(id,campo,valor){
   await upd('lotes',id,{[campo]:valor.trim()});
