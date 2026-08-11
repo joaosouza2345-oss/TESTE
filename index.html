@@ -1044,7 +1044,6 @@ async function renderLotes(){
   });
   el.innerHTML=h;
 }
-}
 async function editNotaLote(id,campo,valor){
   await upd('lotes',id,{[campo]:valor.trim()});
   limparCache();
