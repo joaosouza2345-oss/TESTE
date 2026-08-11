@@ -52,9 +52,6 @@ canvas{max-height:280px}
 .barra-abas{display:flex;gap:4px;margin-bottom:12px;flex-wrap:wrap}
 .barra-abas button{padding:6px 12px;border:1px solid var(--borda);border-radius:6px;background:var(--bg3);color:var(--text2);cursor:pointer;font-size:12px;font-weight:500}
 .barra-abas button.ativo{background:var(--primaria);color:#fff;border-color:var(--primaria)}
-.sub-barra{display:flex;gap:4px;margin-bottom:10px;flex-wrap:wrap}
-.sub-barra button{padding:4px 10px;border:1px solid var(--borda);border-radius:5px;background:transparent;color:var(--text2);cursor:pointer;font-size:11px}
-.sub-barra button.ativo{background:var(--primaria);color:#fff;border-color:var(--primaria)}
 .tabela-wrap{overflow-x:auto;background:var(--bg2);border-radius:10px;border:1px solid var(--borda);margin-bottom:14px;-webkit-overflow-scrolling:touch}
 table{width:100%;border-collapse:collapse;font-size:13px;min-width:500px}
 thead{background:var(--bg3)}
@@ -343,6 +340,7 @@ var idxVender=null,idxEditLead=null,idEditEstq=null,usuarioAtual=null,idxEditUse
 var cache={};
 var projDocs=[],projFotos=[],idxEditProjModal=null;
 var idxEditEmp=null,draggedProjectId=null;
+var loteSelecao=[],lotesCobranca=[];
 var KANBAN_FASES=[
   {nome:'Recebido',cor:'#3b82f6',icone:'📥'},
   {nome:'Elaborado',cor:'#8b5cf6',icone:'📝'},
@@ -385,7 +383,6 @@ function altTema(){document.body.classList.toggle('dark');document.getElementByI
 function limparCache(){cache={}}
 function toggleSidebar(){var s=document.getElementById('sidebar');var o=document.getElementById('sidebarOverlay');s.classList.toggle('open');o.classList.toggle('show')}
 function fecharSidebarMobile(){if(window.innerWidth<=768){var s=document.getElementById('sidebar');var o=document.getElementById('sidebarOverlay');s.classList.remove('open');o.classList.remove('show')}}
-// ===== MÁSCARAS =====
 function maskCnpj(input) {
   var v = input.value.replace(/\D/g, '');
   if (v.length > 14) v = v.slice(0, 14);
@@ -425,7 +422,7 @@ async function ins(t,d){try{cache[t]=null;const{data,error}=await sb.from(t).ins
 async function upd(t,i,d){try{cache[t]=null;const{error}=await sb.from(t).update(d).eq('id',i);if(error){console.error('UPD '+t+':',error.message);return false}return true}catch(e){console.error('UPD '+t+':',e);return false}}
 async function del(t,i){try{cache[t]=null;const{error}=await sb.from(t).delete().eq('id',i);if(error){console.error('DEL '+t+':',error.message);return false}return true}catch(e){return false}}
 function montarSidebar(){
-  var mapa={Administrador:['dashboard','leads','vendas','gastos','financeiro','projetos','empresas','orcamentos','estoque','config'],Financeiro:['dashboard','leads','vendas','gastos','financeiro','projetos','empresas','orcamentos','estoque'],Vendedor:['dashboard','leads','orcamentos'],Empresa:['dashboard','projetos']};
+  var mapa={Administrador:['dashboard','leads','vendas','gastos','financeiro','projetos','empresas','orcamentos','estoque','config'],Financeiro:['dashboard','leads','vendas','gastos','financeiro','projetos','empresas','orcamentos','estoque'],Vendedor:['dashboard','leads','orcamentos'],Empresa:['dashboard','financeiro','projetos']};
   var rotulos={dashboard:'📊 Dashboard',leads:'👥 Leads',vendas:'💰 Vendas',gastos:'🧾 Gastos',financeiro:'💵 Financeiro',projetos:'🔬 Projetos',empresas:'🏢 Empresas',orcamentos:'📋 Orçamentos',estoque:'📦 Estoque',config:'⚙️ Config'};
   var paginas=mapa[usuarioAtual.funcao]||['dashboard'];
   var s=document.getElementById('sidebar');s.innerHTML='';
@@ -680,7 +677,6 @@ function renderToggleChart(){
 }
 function abrirModalPDF(){var sel=document.getElementById('pdfEmpresa');if(sel){sel.innerHTML='<option value="">Todas</option>';var emps=[...new Set((window._allProjetos||[]).map(function(p){return p.empresa}).filter(Boolean))];emps.sort();emps.forEach(function(e){sel.innerHTML+='<option value="'+e+'">'+e+'</option>'})}document.getElementById('modalPDF').classList.add('show');}
 function fecharModalPDF(){document.getElementById('modalPDF').classList.remove('show')}
-// ===== PDF com Total =====
 async function gerarPDF(){var emp=document.getElementById('pdfEmpresa')?document.getElementById('pdfEmpresa').value:'';var pg=document.getElementById('pdfPago')?document.getElementById('pdfPago').value:'';var di=document.getElementById('pdfDtIni')?document.getElementById('pdfDtIni').value:'';var df=document.getElementById('pdfDtFim')?document.getElementById('pdfDtFim').value:'';var P=await get('projetos');if(emp)P=P.filter(function(p){return p.empresa==emp});if(pg)P=P.filter(function(p){return p.pago==pg});if(di||df){P=P.filter(function(p){if(!p.data)return true;var b=p.data.split('/');if(b.length!=3)return true;var d=new Date(b[2],b[1]-1,b[0]);if(di){var a=di.split('/');if(a.length==3&&new Date(a[2],a[1]-1,a[0])>d)return false}if(df){var a=df.split('/');if(a.length==3&&new Date(a[2],a[1]-1,a[0])<d)return false}return true})}try{var doc=new jspdf.jsPDF();doc.setFontSize(16);doc.text('SF Projetos Elétricos - Relatório de Projetos',14,22);doc.setFontSize(10);doc.text('Gerado: '+hoje(),14,30);var head=['#'];if(document.getElementById('pcCliente').checked)head.push('Cliente');if(document.getElementById('pcEmpresa').checked)head.push('Empresa');if(document.getElementById('pcData').checked)head.push('Data');if(document.getElementById('pcDataInstalacao').checked)head.push('Dt Inst.');if(document.getElementById('pcValor').checked)head.push('Valor');if(document.getElementById('pcTRT').checked)head.push('TRT');if(document.getElementById('pcPago').checked)head.push('Pago');var body=[];P.forEach(function(p,i){var row=[String(i+1)];if(document.getElementById('pcCliente').checked)row.push(p.cliente||'');if(document.getElementById('pcEmpresa').checked)row.push(p.empresa||'');if(document.getElementById('pcData').checked)row.push(p.data||'');if(document.getElementById('pcDataInstalacao').checked)row.push(p.data_instalacao||'');if(document.getElementById('pcValor').checked)row.push('R$ '+fmtNum(parseMon(p.valor)));if(document.getElementById('pcTRT').checked)row.push('R$ '+fmtNum(parseMon(p.trt)));if(document.getElementById('pcPago').checked)row.push(p.pago||'');body.push(row)});if(doc.autoTable){doc.autoTable({startY:38,head:[head],body:body,theme:'striped',headStyles:{fillColor:[37,99,235]}});var finalY=doc.lastAutoTable.finalY+6;var totalValor=P.reduce(function(s,p){return s+parseMon(p.valor)},0);var totalTRT=P.reduce(function(s,p){return s+parseMon(p.trt)},0);doc.setDrawColor(37,99,235);doc.setLineWidth(0.5);doc.line(14,finalY-4,doc.internal.pageSize.width-14,finalY-4);doc.setFontSize(10);doc.setFont(undefined,'bold');doc.text('TOTAL',14+2,finalY+4);var x=doc.autoTable.previous.finalX||doc.internal.pageSize.width-14;if(document.getElementById('pcValor').checked){doc.text('R$ '+fmtNum(totalValor),x-50,finalY+4);if(document.getElementById('pcTRT').checked){doc.text('R$ '+fmtNum(totalTRT),x-50-60,finalY+4)}}}doc.save('projetos_'+hoje().replace(/\//g,'-')+'.pdf');fecharModalPDF()}catch(e){alert('Erro PDF: '+e.message)}}
 // LEADS
 async function pagLeads(){if(!['Administrador','Financeiro','Vendedor'].includes(usuarioAtual.funcao)){document.getElementById('conteudo').innerHTML='<div class="titulo-pag">👥 Leads</div><p>Acesso negado</p>';return}var d=await get('leads');_allLeads=d;var sts=['Venda Fechada','Negociação','Apresentação do Pojeto','Orçamento Gerado','Contato Inicial','Sem Resposta','Desistiu','Fechou com outra empresa'];var vnd=['João','Bruno','Vinicius','Sistema'];var h='<div class="titulo-pag">👥 Leads</div><div class="filtro-bar"><div class="grupo"><label>Busca</label><input id="fLeadBusca" placeholder="Nome..." oninput="filtrarLeads()"></div><div class="grupo"><label>Andamento</label><select id="fLeadSts" onchange="filtrarLeads()"><option value="">Todos</option>'+sts.map(function(s){return'<option>'+s+'</option>'}).join('')+'</select></div><div class="grupo"><label>Vendedor</label><select id="fLeadVend" onchange="filtrarLeads()"><option value="">Todos</option>'+vnd.map(function(s){return'<option>'+s+'</option>'}).join('')+'</select></div><button class="btn btn-outline" onclick="limparFiltrosLeads()">Limpar</button></div><p style="margin-bottom:12px" id="leadCount">'+d.length+' leads</p><div class="tabela-wrap"><table><thead><tr><th>Nome</th><th>Cidade</th><th>Origem</th><th>Valor</th><th>Contato</th><th>Data</th><th>Link Orçamento</th><th>Andamento</th><th>Vendedor</th><th>Ações</th></tr></thead><tbody id="leadBody"></tbody></table></div><div style="margin-top:12px"><button class="btn btn-primary" onclick="abrirModalLead()">+ Novo Lead</button></div>';document.getElementById('conteudo').innerHTML=h;filtrarLeads();}
@@ -750,7 +746,6 @@ function renderizarKanban(d){
     board.appendChild(col)
   })
 }
-// FASES KANBAN
 function abrirModalFases(){renderFasesList();document.getElementById('modalFases').classList.add('show')}
 function fecharModalFases(){document.getElementById('modalFases').classList.remove('show')}
 function renderFasesList(){var c=document.getElementById('fasesList');c.innerHTML='';KANBAN_FASES.forEach(function(f,i){var div=document.createElement('div');div.style.cssText='display:flex;align-items:center;gap:8px;background:var(--bg3);padding:10px;border-radius:8px;margin-bottom:6px;flex-wrap:wrap';div.innerHTML='<span style="width:24px;text-align:center;font-size:18px">'+f.icone+'</span><input value="'+f.nome+'" onchange="editFaseNome('+i+',this.value)" style="flex:1;min-width:100px;padding:6px 8px;border:1px solid var(--input-border);border-radius:4px;background:var(--input-bg);color:var(--text);font-size:13px"><input type="color" value="'+f.cor+'" onchange="editFaseCor('+i+',this.value)" style="width:36px;height:32px;border:1px solid var(--input-border);border-radius:4px;cursor:pointer;background:transparent"><button onclick="moverFase('+i+',-1)" '+(i==0?'disabled':'')+' style="background:none;border:1px solid var(--borda);border-radius:4px;cursor:pointer;padding:4px 8px;font-size:12px;color:var(--text2);opacity:'+(i==0?'.4':'1')+'">↑</button><button onclick="moverFase('+i+',1)" '+(i==KANBAN_FASES.length-1?'disabled':'')+' style="background:none;border:1px solid var(--borda);border-radius:4px;cursor:pointer;padding:4px 8px;font-size:12px;color:var(--text2);opacity:'+(i==KANBAN_FASES.length-1?'.4':'1')+'">↓</button><button onclick="delFase('+i+')" style="background:none;border:none;cursor:pointer;color:var(--perigo);font-size:16px">🗑️</button>';c.appendChild(div)})}
@@ -811,22 +806,31 @@ async function editUser(id){var d=await get('usuarios');var u=d.find(function(x)
 async function addUser(){var n=document.getElementById('cNome').value.trim(),u=document.getElementById('cUser').value.trim(),p=document.getElementById('cPass').value.trim(),f=document.getElementById('cFun').value,emp=document.getElementById('cEmpresa').value.trim();if(!n||!u){document.getElementById('cMsg').textContent='Preencha nome e usuário';document.getElementById('cMsg').style.color='var(--perigo)';return}if(!idxEditUser&&!p){document.getElementById('cMsg').textContent='Informe a senha';document.getElementById('cMsg').style.color='var(--perigo)';return}if(f=='Empresa'&&!emp){document.getElementById('cMsg').textContent='Informe a empresa';document.getElementById('cMsg').style.color='var(--perigo)';return}if(!idxEditUser){var ex=await get('usuarios');if(ex.find(function(x){return x.usuario==u})){document.getElementById('cMsg').textContent='Usuário já existe';document.getElementById('cMsg').style.color='var(--perigo)';return}}var dados={nome:n,usuario:u,funcao:f,empresa:emp};if(p)dados.senha=p;if(idxEditUser){await upd('usuarios',idxEditUser,dados)}else{await ins('usuarios',dados)}document.getElementById('cMsg').textContent=idxEditUser?'✅ Atualizado!':'✅ Cadastrado!';document.getElementById('cMsg').style.color='var(--sucesso)';document.getElementById('cNome').value='';document.getElementById('cUser').value='';document.getElementById('cPass').value='';document.getElementById('cEmpresa').value='';document.querySelector('#conteudo .btn-primary').textContent='+ Cadastrar';idxEditUser=null;pagConfig()}
 async function fazerBackup(){var msg=document.getElementById('bkMsg');if(!msg)return;msg.textContent='Gerando backup...';msg.style.color='var(--aviso)';try{var wb=XLSX.utils.book_new();var tabelas=['leads','vendas','gastos','empresas','projetos','estoque','orcamentos','usuarios'];for(var i=0;i<tabelas.length;i++){var data=await get(tabelas[i]);if(tabelas[i]==='projetos'){data=data.map(function(p){var c=Object.assign({},p);if(c.documentos){try{c.documentos=JSON.parse(c.documentos).map(function(d){return d.nome}).join('; ')}catch(e){}}if(c.fotos){try{c.fotos=JSON.parse(c.fotos).length+' foto(s)'}catch(e){}}return c})}if(tabelas[i]==='orcamentos'){data=data.map(function(o){var c=Object.assign({},o);if(c.itens){try{c.itens=JSON.stringify(c.itens)}catch(e){}}return c})}var ws=XLSX.utils.json_to_sheet(data.length?data:[{aviso:'Sem dados'}]);XLSX.utils.book_append_sheet(wb,ws,tabelas[i])}XLSX.writeFile(wb,'backup_crm_'+hoje().replace(/\//g,'-')+'.xlsx');msg.textContent='✅ Backup gerado!';msg.style.color='var(--sucesso)'}catch(e){msg.textContent='Erro: '+e.message;msg.style.color='var(--perigo)'}}
 async function rmUser(id){if(!confirm('Remover?'))return;await del('usuarios',id);pagConfig()}
-// ===== FINANCEIRO (COMPLETO) =====
-var loteSelecao = [];
-var lotesCobranca = [];
-
-async function carregarLotes(){lotesCobranca = await get('lotes')}
-
+// ===== FINANCEIRO (filtros + lote + NF + restrição por empresa) =====
+var loteSelecao=[];
+var lotesCobranca=[];
+async function carregarLotes(){lotesCobranca=await get('lotes')}
 async function pagFinanceiro(){
   carregarLotes();
   var m=document.getElementById('conteudo');
   var d=await get('projetos');
   _allProjetos=d;
+  var isEmp=(usuarioAtual.funcao=='Empresa');
+  var empRestrita=isEmp?(usuarioAtual.empresa||''):'';
+  if(isEmp&&empRestrita){
+    var et=empRestrita.toLowerCase();
+    d=d.filter(function(p){return(p.empresa||'').toLowerCase()==et||(p.empresa||'').toLowerCase().includes(et)||et.includes((p.empresa||'').toLowerCase())});
+    _allProjetos=d;
+  }
   var agora=new Date();
   var emps=[...new Set(d.map(function(p){return p.empresa}).filter(Boolean))].sort();
   var h='<div class="titulo-pag">💵 Financeiro</div>';
   h+='<div class="filtro-bar">';
-  h+='<div class="grupo"><label>Empresa</label><select id="fFinEmp" onchange="filtrarFinanceiro()"><option value="">Todas</option>'+emps.map(function(e){return'<option>'+e+'</option>'}).join('')+'</select></div>';
+  if(isEmp){
+    h+='<div class="grupo"><label>Empresa</label><input value="'+(empRestrita||'Sua empresa')+'" disabled style="background:var(--bg3)"></div>';
+  }else{
+    h+='<div class="grupo"><label>Empresa</label><select id="fFinEmp" onchange="filtrarFinanceiro()"><option value="">Todas</option>'+emps.map(function(e){return'<option>'+e+'</option>'}).join('')+'</select></div>';
+  }
   h+='<div class="grupo"><label>Mês</label><select id="fFinMes" onchange="filtrarFinanceiro()"><option value="">Todos os meses</option>'+meses().map(function(e,i){return'<option value="'+i+'"'+(i==agora.getMonth()?' selected':'')+'>'+e+'</option>'}).join('')+'</select></div>';
   h+='<div class="grupo"><label>Ano</label><select id="fFinAno" onchange="filtrarFinanceiro()"><option value="">Todos</option></select></div>';
   h+='<div class="grupo"><label>Pagamento</label><select id="fFinPago" onchange="filtrarFinanceiro()"><option value="">Todos</option><option value="NÃO">Não pago</option><option value="SIM">Pago</option></select></div>';
@@ -850,11 +854,11 @@ async function pagFinanceiro(){
   selAno.innerHTML='<option value="">Todos</option>';
   anos.forEach(function(a){selAno.innerHTML+='<option>'+a+'</option>'});
   if(anos.indexOf(String(agora.getFullYear()))>=0)selAno.value=String(agora.getFullYear());
+  window._FIN_ISEMP=isEmp;window._FIN_EMPREST=empRestrita;
   filtrarFinanceiro();
   renderLoteAtual();
   renderLotes();
 }
-
 function limparFiltrosFinanceiro(){
   if(document.getElementById('fFinEmp'))document.getElementById('fFinEmp').value='';
   if(document.getElementById('fFinMes'))document.getElementById('fFinMes').value='';
@@ -862,9 +866,11 @@ function limparFiltrosFinanceiro(){
   if(document.getElementById('fFinPago'))document.getElementById('fFinPago').value='';
   filtrarFinanceiro();
 }
-
 function filtrarFinanceiro(){
+  var isEmp=window._FIN_ISEMP;
+  var empRestrita=window._FIN_EMPREST||'';
   var empF=document.getElementById('fFinEmp')?document.getElementById('fFinEmp').value:'';
+  if(isEmp)empF=empRestrita;
   var mesF=document.getElementById('fFinMes')?document.getElementById('fFinMes').value:'';
   var anoF=document.getElementById('fFinAno')?document.getElementById('fFinAno').value:'';
   var pagoF=document.getElementById('fFinPago')?document.getElementById('fFinPago').value:'';
@@ -907,7 +913,6 @@ function filtrarFinanceiro(){
   document.getElementById('finEmpresas').innerHTML=h;
   window._FIN=d;window._FIN_MES=mesF;window._FIN_ANO=anoF;window._FIN_EMP=empF;
 }
-
 function finAtualizarLoteInfo(){
   var boxes=document.querySelectorAll('input.fin-chk:checked');
   var total=0;
@@ -950,7 +955,6 @@ function renderLoteAtual(){
   if(info)info.textContent=loteSelecao.length+' projetos • R$ '+fmtNum(total);
 }
 function finRemoverLote(i){loteSelecao.splice(i,1);renderLoteAtual()}
-
 async function salvarLote(){
   if(!loteSelecao.length){alert('Adicione projetos ao lote antes de salvar.');return}
   var nota=document.getElementById('loteNota').value.trim();
@@ -973,7 +977,6 @@ async function salvarLote(){
   renderLotes();
   alert('✅ Lote salvo!');
 }
-
 async function renderLotes(){
   var el=document.getElementById('lotesList');
   if(!el)return;
@@ -986,10 +989,10 @@ async function renderLotes(){
     h+='<div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px">';
     h+='<div><strong>📦 Lote '+(l.nota||idx+1)+'</strong> <span style="font-size:12px;color:var(--text2)">'+l.data+'</span> <span style="font-size:11px;padding:2px 8px;border-radius:10px;font-weight:600;'+(pago?'background:rgba(34,197,94,.15);color:var(--sucesso)':'background:rgba(245,158,11,.15);color:var(--aviso)')+'">'+(pago?'✅ Pago':'⏳ Em aberto')+'</span></div>';
     h+='<div style="display:flex;gap:6px;flex-wrap:wrap">'+(pago?'':'<button class="btn btn-success" onclick="marcarLotePago('+l.id+')">✅ Marcar como Pago</button>')+'<button class="btn btn-outline" onclick="gerarPDFLote('+idx+')">📄 PDF Lote</button><button class="btn btn-icone" onclick="excluirLote('+l.id+')">🗑️</button></div></div>';
-    h+='<div style="font-size:12px;color:var(--text2);margin-top:6px">';
-    if(l.ref)h+='Ref: '+l.ref+' • ';
-    h+=l.projetos.length+' projeto(s) • Total: <strong style="color:var(--sucesso)">R$ '+fmtNum(l.total)+'</strong>';
-    if(pago&&l.data_pagamento)h+=' • Pago em: '+l.data_pagamento;
+    h+='<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px;align-items:end">';
+    h+='<div class="grupo" style="margin-bottom:0"><label style="font-size:11px;color:var(--text2)">Nº Nota (NF)</label><input class="edita-input" style="width:110px" value="'+(l.nota||'')+'" placeholder="Ex: 0007" onchange="editNotaLote('+l.id+',\'nota\',this.value)"></div>';
+    h+='<div class="grupo" style="margin-bottom:0"><label style="font-size:11px;color:var(--text2)">Referência</label><input class="edita-input" style="width:150px" value="'+(l.ref||'')+'" placeholder="Ex: João / Setembro" onchange="editNotaLote('+l.id+',\'ref\',this.value)"></div>';
+    h+='<span style="font-size:12px;color:var(--text2)">'+l.projetos.length+' projeto(s) • Total: <strong style="color:var(--sucesso)">R$ '+fmtNum(l.total)+'</strong>'+(pago&&l.data_pagamento?' • Pago em: '+l.data_pagamento:'')+'</span>';
     h+='</div>';
     h+='<div style="margin-top:8px;padding-top:8px;border-top:1px solid var(--borda);font-size:12px">';
     h+='<strong>📎 Nota Fiscal:</strong> ';
@@ -1006,7 +1009,13 @@ async function renderLotes(){
   });
   el.innerHTML=h;
 }
-
+async function editNotaLote(id,campo,valor){
+  await upd('lotes',id,{[campo]:valor.trim()});
+  limparCache();
+  lotesCobranca=await get('lotes');
+  var el=document.getElementById('lotesList');
+  if(el)renderLotes();
+}
 async function marcarLotePago(id){
   if(!confirm('Marcar este lote como PAGO? Isso altera o status de pagamento de todos os projetos do lote para SIM.'))return;
   var l=lotesCobranca.find(function(x){return x.id==id});
@@ -1022,7 +1031,6 @@ async function marcarLotePago(id){
   renderLotes();
   filtrarFinanceiro();
 }
-
 function anexarNotaFiscal(id,input){
   var f=input.files&&input.files[0];
   if(!f)return;
@@ -1077,7 +1085,6 @@ function gerarPDFLote(idx){
     doc.save('lote_cobranca_'+(l.nota||'sem_nota')+'.pdf');
   }catch(e){alert('Erro PDF: '+e.message)}
 }
-
 function gerarPDFFinanceiro(emp){
   var d=window._FIN||[];
   if(emp!='consolidado')d=d.filter(function(p){return(p.empresa||'Sem empresa')==emp});
@@ -1102,7 +1109,6 @@ function gerarPDFFinanceiro(emp){
     doc.save('cobranca_'+(mesF!==''?meses()[parseInt(mesF)]:'geral')+(anoF?'_'+anoF:'')+(emp!='consolidado'?'_'+emp:'')+'.pdf');
   }catch(e){alert('Erro PDF: '+e.message)}
 }
-
 document.addEventListener('DOMContentLoaded',function(){if(localStorage.getItem('tema')=='dark'){document.body.classList.add('dark');document.getElementById('btnTema').textContent='☀️'}autoLogin()});
 </script>
 </body>
