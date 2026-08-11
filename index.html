@@ -874,7 +874,18 @@ function filtrarFinanceiro(){
   var mesF=document.getElementById('fFinMes')?document.getElementById('fFinMes').value:'';
   var anoF=document.getElementById('fFinAno')?document.getElementById('fFinAno').value:'';
   var pagoF=document.getElementById('fFinPago')?document.getElementById('fFinPago').value:'';
+
+  // Coleta os IDs dos projetos que JÁ estão em lotes (para não cobrar de novo)
+  var idsEmLote={};
+  lotesCobranca.forEach(function(l){
+    (l.projetos||[]).forEach(function(x){
+      if(x.id)idsEmLote[x.id]=true;
+    });
+  });
+
   var d=_allProjetos.filter(function(p){
+    // Exclui projetos que já estão em algum lote
+    if(idsEmLote[p.id])return false;
     if(empF&&(p.empresa||'')!=empF)return false;
     if(pagoF=='SIM'&&(p.pago||'NÃO')!='SIM')return false;
     if(pagoF=='NÃO'&&(p.pago||'NÃO')=='SIM')return false;
@@ -909,7 +920,7 @@ function filtrarFinanceiro(){
     h+='<tr style="font-weight:700;background:var(--bg3)"><td></td><td>TOTAL '+e+'</td><td>R$ '+fmtNum(tot)+'</td><td></td><td></td><td></td></tr>';
     h+='</tbody></table></div>';
   });
-  if(!emps.length)h='<p style="color:var(--text2);padding:20px">Nenhum projeto encontrado com esses filtros.</p>';
+  if(!emps.length)h='<p style="color:var(--text2);padding:20px">Nenhum projeto disponível para cobrança com esses filtros.</p>';
   document.getElementById('finEmpresas').innerHTML=h;
   window._FIN=d;window._FIN_MES=mesF;window._FIN_ANO=anoF;window._FIN_EMP=empF;
 }
