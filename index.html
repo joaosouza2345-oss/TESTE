@@ -831,7 +831,7 @@ async function pagFinanceiro(){
   }else{
     h+='<div class="grupo"><label>Empresa</label><select id="fFinEmp" onchange="filtrarFinanceiro()"><option value="">Todas</option>'+emps.map(function(e){return'<option>'+e+'</option>'}).join('')+'</select></div>';
   }
-  h+='<div class="grupo"><label>Mês</label><select id="fFinMes" onchange="filtrarFinanceiro()"><option value="">Todos os meses</option>'+meses().map(function(e,i){return'<option value="'+i+'"'+(i==agora.getMonth()?' selected':'')+'>'+e+'</option>'}).join('')+'</select></div>';
+ h+='<div class="grupo"><label>Mês</label><select id="fFinMes" onchange="filtrarFinanceiro()"><option value="">Todos os meses</option>'+meses().map(function(e,i){return'<option value="'+i+'">'+e+'</option>'}).join('')+'</select></div>';
   h+='<div class="grupo"><label>Ano</label><select id="fFinAno" onchange="filtrarFinanceiro()"><option value="">Todos</option></select></div>';
   h+='<div class="grupo"><label>Pagamento</label><select id="fFinPago" onchange="filtrarFinanceiro()"><option value="">Todos</option><option value="NÃO">Não pago</option><option value="SIM">Pago</option></select></div>';
   h+='<button class="btn btn-outline" onclick="limparFiltrosFinanceiro()">Limpar</button>';
